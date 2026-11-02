@@ -88,6 +88,10 @@ textarea{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--
 .reel{width:84px;height:84px;background:#f4f1ea;border-radius:10px;border:3px solid #7a1f2e;display:flex;align-items:center;justify-content:center;font-size:44px}
 .sx{display:flex;gap:10px;justify-content:center;padding:10px;background:#2a1018;border-radius:10px}
 .cbtn{display:flex;gap:6px;flex-wrap:wrap}
+#hurt{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(ellipse at center,rgba(255,0,0,0) 40%,rgba(200,0,0,.65) 100%)}
+#ammo{position:absolute;right:14px;bottom:14px;padding:8px 12px;font:600 14px var(--mono);display:none}
+#bbhud{position:absolute;left:50%;top:60px;transform:translateX(-50%);padding:6px 14px;font:700 18px var(--disp);letter-spacing:.05em}
+#bbbar{position:absolute;left:50%;bottom:24%;width:240px;margin-left:-120px;padding:8px 10px}
 </style>
 </head>
 <body>
@@ -95,14 +99,14 @@ textarea{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--
 <div id="hud">
  <div id="stats" class="box"><small>Caja</small><span class="big" id="cash">$0</span>
   <small id="lvtx">Nivel 1</small><div class="bar"><i id="xpbar"></i></div>
-  <small id="daytx">Día 1 · 08:00</small><div class="bar"><i id="daybar" style="background:var(--blue)"></i></div><small id="opentx"></small></div>
+  <small id="daytx">Día 1 · 08:00</small><div class="bar"><i id="daybar" style="background:var(--blue)"></i></div><small id="opentx"></small><div id="hpbox" style="display:none"><small>Salud</small><div class="bar"><i id="hpbar" style="background:var(--red);width:100%"></i></div></div></div>
  <div id="obj" class="box"><b>Objetivo</b><span id="objtx"></span></div>
  <div id="cross"></div><div id="prompt" class="box"></div>
  <div id="vf"><div class="fr"></div><div class="rec"><i></i><span id="rectx">CAM</span></div><div class="tp" id="vftx"></div></div>
  <div id="shotbar" class="box"><span id="shotlbl"></span><div class="bar"><i id="shotfill" style="background:var(--green)"></i></div></div>
  <div id="hotbar"></div><div id="vftips" class="box"></div><div id="compass" class="box"><span id="cpa">▲</span><span id="cpt"></span></div>
- <div id="pop"></div><div id="flash"></div>
- <div id="help" class="box"><kbd>WASD</kbd> mover · <kbd>Shift</kbd> correr · <kbd>E</kbd> interactuar · <kbd>Clic der.</kbd> apuntar · <kbd>Clic izq.</kbd> disparar / grabar · <kbd>1-9</kbd>/rueda equipo · <kbd>I</kbd> inventario · <kbd>Tab</kbd> teléfono · <kbd>Esc</kbd> pausa</div>
+ <div id="hurt"></div><div id="bbhud" class="box" style="display:none"></div><div id="bbbar" class="box" style="display:none"><div class="bar" style="position:relative;height:14px"><i id="bbfill" style="background:var(--amber)"></i><b style="position:absolute;left:40%;width:20%;top:-3px;bottom:-3px;border:2px solid var(--green);border-radius:3px"></b></div></div><div id="ammo" class="box"></div><div id="pop"></div><div id="flash"></div>
+ <div id="help" class="box"><kbd>WASD</kbd> mover · <kbd>Shift</kbd> correr · <kbd>Espacio</kbd> saltar (mantén para bunny hop) · <kbd>E</kbd> interactuar · <kbd>Clic der.</kbd> apuntar · <kbd>Clic izq.</kbd> disparar / grabar · <kbd>1-9</kbd>/rueda equipo · <kbd>I</kbd> inventario · <kbd>Tab</kbd> teléfono · <kbd>Esc</kbd> pausa</div>
 </div>
 <div id="fade"></div><div id="toast" class="box"></div>
 <div id="start" class="ov"><div class="md"><h2>Claqueta Studio 3D</h2>
@@ -202,10 +206,10 @@ const ACHS=[
 /* ================= Estado ================= */
 const fresh=()=>({v:1,day:1,min:DAY_START,cash:300,xp:0,rep:0,earned:0,
  gear:{camara:0,lentes:0,luces:1,audio:0,gimbal:0,dron:0,pc:0,fondos:0,decor:0},
- staff:{recep:0,asist:0,editor:0},ads:0,open:false,hot:['cam',null,null,null,null,null,null,null,null],sel:0,trk:null,cas:{net:0,met:{}},
+ staff:{recep:0,asist:0,editor:0},ads:0,open:false,hot:['cam',null,null,null,null,null,null,null,null],sel:0,trk:null,cas:{net:0,met:{}},arm:{pis:0,rev:0,ammo:0},
  boxes:[],edits:[],leads:[],jobs:[],nid:1,stats:{served:0,lost:0,jobs:0,five:0},ach:{},today:{in:0,out:0,n:0},muted:false});
 let S=fresh();
-function load(){try{const r=localStorage.getItem(SAVE_KEY);if(!r)return false;const d=JSON.parse(r);if(!d||d.v!==1)return false;const f=fresh();S=Object.assign(f,d);S.gear=Object.assign(f.gear,d.gear);S.staff=Object.assign(f.staff,d.staff);S.stats=Object.assign(f.stats,d.stats);S.today=Object.assign(f.today,d.today);S.hot=(d.hot&&d.hot.length===9)?d.hot:f.hot;S.cas=Object.assign({net:0,met:{}},d.cas||{});S.open=false;return true;}catch(e){return false;}}
+function load(){try{const r=localStorage.getItem(SAVE_KEY);if(!r)return false;const d=JSON.parse(r);if(!d||d.v!==1)return false;const f=fresh();S=Object.assign(f,d);S.gear=Object.assign(f.gear,d.gear);S.staff=Object.assign(f.staff,d.staff);S.stats=Object.assign(f.stats,d.stats);S.today=Object.assign(f.today,d.today);S.hot=(d.hot&&d.hot.length===9)?d.hot:f.hot;S.cas=Object.assign({net:0,met:{}},d.cas||{});S.arm=Object.assign({pis:0,rev:0,ammo:0},d.arm||{});S.open=false;return true;}catch(e){return false;}}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(Object.assign({},S,{edits:S.edits.filter(o=>o.kind==='job')})));}catch(e){}}
 const G_=k=>S.gear[k]||0,ST=k=>S.staff[k]||0;
 const level=()=>lvOf(S.xp);
@@ -216,11 +220,11 @@ const adsCost=l=>l*l*35;
 const lightsOn=[];                                     // se llena al construir el mundo
 /* ================= Motor 3D y mundo ================= */
 const renderer=new THREE.WebGLRenderer({canvas:$('#c'),antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x9fc5e8);scene.fog=new THREE.Fog(0x9fc5e8,60,260);
-const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,400);scene.add(camera);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9fc5e8);scene.fog=new THREE.Fog(0x9fc5e8,55,150);
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.05,200);scene.add(camera);
 const hemi=new THREE.HemisphereLight(0xdff0ff,0x6a5a46,.62);scene.add(hemi);
-const sun=new THREE.DirectionalLight(0xfff1d6,.9);sun.position.set(26,34,-10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+const sun=new THREE.DirectionalLight(0xfff1d6,.9);sun.position.set(26,34,-10);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);
 Object.assign(sun.shadow.camera,{left:-34,right:34,top:34,bottom:-34,near:1,far:120});sun.shadow.bias=-.0006;scene.add(sun);scene.add(sun.target);sun.target.position.set(10,0,10);
 const roomLights=[[4,3.2,3.5],[12,3.2,8.5],[8,3.2,5.5],[3,3.2,9]].map(p=>{const l=new THREE.PointLight(0xfff0dc,.55,15,1.6);l.position.set(...p);scene.add(l);return l;});
 
@@ -486,6 +490,7 @@ cv.addEventListener('mousedown',e=>{if(!started||modal||pauseOv)return;
 addEventListener('mouseup',e=>{if(e.button===0){if(drag){const click=drag.moved<5;drag=null;if(RS&&!RS.done)onLeft(false);else if(click){onLeft(true);onLeft(false);}}else onLeft(false);}if(e.button===2)P.aim=false;});
 addEventListener('contextmenu',e=>e.preventDefault());
 addEventListener('keydown',e=>{
+  if(e.code==='Space')e.preventDefault();
   if(e.code==='Tab'){e.preventDefault();if(!started||pauseOv)return;if(modal&&modal.kind==='phone')closeModal();else if(!modal)openPhone();return;}
   if(e.code==='KeyI'&&!e.repeat&&started&&!pauseOv){if(modal&&modal.kind==='inv')closeModal();else if(!modal)openInv();return;}
   if(e.code==='Escape'&&modal&&modal.kind!=='edit'&&modal.kind!=='day'){closeModal();return;}
@@ -509,18 +514,26 @@ function closeModal(silent){if(!modal)return;modal.ov.remove();modal=null;if(!si
 
 /* ---- colisiones ---- */
 function blocked(x,z,r){r=r||.3;if(P.y>0&&!V.drive)return false;for(const c of colliders){if(x>c[0]-r&&x<c[2]+r&&z>c[1]-r&&z<c[3]+r)return true;}return false;}
+const MV={vx:0,vz:0,vy:0,jy:0,air:false,boost:1,gt:0,hops:0};
 function movePlayer(dt){
   if(modal||paused||!started)return;
   if(V.drive){driveStep(dt);return;}
   let f=0,s=0;if(keys.has('KeyW')||keys.has('ArrowUp'))f++;if(keys.has('KeyS')||keys.has('ArrowDown'))f--;if(keys.has('KeyD')||keys.has('ArrowRight'))s++;if(keys.has('KeyA')||keys.has('ArrowLeft'))s--;
-  if(!f&&!s)return;const l=Math.hypot(f,s)||1;f/=l;s/=l;
-  const sp=(keys.has('ShiftLeft')||keys.has('ShiftRight')?5.2:3.1)*(P.aim?.5:1)*dt;
-  const dx=(-Math.sin(P.yaw)*f+Math.cos(P.yaw)*s)*sp,dz=(-Math.cos(P.yaw)*f-Math.sin(P.yaw)*s)*sp;
-  let nx=P.x+dx,nz=P.z+dz;
-  if(!blocked(nx,P.z))P.x=nx;if(!blocked(P.x,nz))P.z=nz;
+  const l=Math.hypot(f,s)||1;f/=l;s/=l;
+  const base=(keys.has('ShiftLeft')||keys.has('ShiftRight')?5.2:3.1)*(P.aim?.5:1);
+  const wx=(-Math.sin(P.yaw)*f+Math.cos(P.yaw)*s),wz=(-Math.cos(P.yaw)*f-Math.sin(P.yaw)*s);
+  /* salto / bunny hop: mantener Espacio al caer encadena saltos y aumenta la velocidad */
+  const wantJump=keys.has('Space');
+  if(!MV.air){MV.gt+=dt;if(wantJump&&!P.aim){MV.vy=6.3;MV.air=true;MV.hops=MV.gt<.18?Math.min(MV.hops+1,9):0;MV.boost=1+MV.hops*.09;MV.gt=0;beep(380,.05,'triangle',.03);}
+    else if(MV.gt>.18){MV.boost=1;MV.hops=0;}}
+  const tx=wx*base*MV.boost,tz=wz*base*MV.boost,acc=(MV.air?5:38)*dt;
+  MV.vx+=clamp(tx-MV.vx,-acc,acc);MV.vz+=clamp(tz-MV.vz,-acc,acc);
+  const sp=Math.hypot(MV.vx,MV.vz),cap=10.5;if(sp>cap){MV.vx*=cap/sp;MV.vz*=cap/sp;}
+  if(MV.air){MV.vy-=19*dt;MV.jy+=MV.vy*dt;if(MV.jy<=0){MV.jy=0;MV.vy=0;MV.air=false;MV.gt=0;}}
+  const nx=P.x+MV.vx*dt,nz=P.z+MV.vz*dt;
+  if(!blocked(nx,P.z,.3)||MV.jy>1.05)P.x=nx;else MV.vx=0;if(!blocked(P.x,nz,.3)||MV.jy>1.05)P.z=nz;else MV.vz=0;
   if(P.y>0){P.x=clamp(P.x,212.8,237.2);P.z=clamp(P.z,31.8,48.2);}else{P.x=clamp(P.x,bounds[0],bounds[2]);P.z=clamp(P.z,bounds[1],bounds[3]);}
 }
-
 /* ================= Interacción ================= */
 const ray=new THREE.Raycaster();ray.far=3.2;
 let target=null;
@@ -638,6 +651,8 @@ function shotReport(i){const bad=[];if(i.fr<.6)bad.push('encuadre');if(i.df<1)ba
   return 'Encuadre '+pct(i.fr)+' · Luz '+pct(i.lf/1.1)+' · Distancia '+(i.df<1?(i.d<1.2?'muy cerca':'muy lejos'):'ok')+(bad.length?' → mejora: '+bad.join(', '):'');}
 function onLeft(down){
   if(!started||modal||paused||V.drive)return;
+  if(BB.held){if(down){BB.charging=true;BB.charge=0;}else if(BB.charging)throwBall(BB.charge);return;}
+  if(isGun(heldItem())){if(down)fireGun();return;}
   if(RS&&!RS.done){P.rec=down&&P.aim;return;}
   if(!down)return;
   if(P.loc)return;
@@ -847,7 +862,7 @@ function openInv(){
     h('p',{text:'Elige en qué tecla (1–9) quieres cada objeto. Los encargos piden objetos concretos en la mano o en tu hotbar.'}));
   const draw=()=>{
     node.querySelectorAll('.invrow').forEach(e=>e.remove());
-    Object.keys(ITEMS).forEach(k=>{const it=ITEMS[k];if(!it.own()){node.insertBefore(h('div',{class:'row invrow',style:'opacity:.55'},h('div',{class:'tx'},h('b',{text:it.ic+' '+(k==='mic'?'Micrófono':k==='gim'?'Estabilizador':'Dron')+' (no lo tienes)'}),h('small',{text:'Cómpralo en Cine-Equipo, la tienda junto al estudio.'}))),node.lastChild);return;}
+    Object.keys(ITEMS).forEach(k=>{const it=ITEMS[k];if(!it.own()){if(it.gun)return;node.insertBefore(h('div',{class:'row invrow',style:'opacity:.55'},h('div',{class:'tx'},h('b',{text:it.ic+' '+(k==='mic'?'Micrófono':k==='gim'?'Estabilizador':'Dron')+' (no lo tienes)'}),h('small',{text:'Cómpralo en Cine-Equipo, la tienda junto al estudio.'}))),node.lastChild);return;}
       const sl=h('div',{style:'display:flex;gap:4px;flex-wrap:wrap'});
       for(let i=0;i<9;i++)sl.append(h('button',{class:S.hot[i]===k?'pri':'',style:'min-width:34px;padding:4px 0',onclick:()=>{S.hot=S.hot.map(x=>x===k?null:x);S.hot[i]=k;S.sel=i;draw();},text:String(i+1)}));
       sl.append(h('button',{style:'padding:4px 8px',onclick:()=>{S.hot=S.hot.map(x=>x===k?null:x);draw();}},'quitar'));
@@ -1077,6 +1092,254 @@ function openRoulette(){
     bc.el,h('div',{style:'display:flex;gap:8px'},h('button',{class:'pri',onclick:spin},'GIRAR'),h('button',{onclick:()=>{if(!spinning)closeModal();}},'Levantarse')),hist,casNote());
   openModal('casino',root,true);draw();
 }
+
+/* ================= Rendimiento: ocultar lo lejano (la simulación sigue) ================= */
+const CULL={list:[],lights:[],t:0,R:150,n:0};
+function initCull(){
+  scene.updateMatrixWorld(true);
+  scene.children.forEach(o=>{
+    if(o.isLight){if(o.isPointLight){CULL.lights.push({l:o,on:true,x:o.position.x,z:o.position.z});}return;}
+    if(o===camera||o===BEACON||o===ground)return;
+    if(!(o.position.x>40.5||o.position.z>24))return;
+    let r=0;if(o.isMesh){const g=o.geometry;if(!g.boundingSphere)g.computeBoundingSphere();r=g.boundingSphere.radius*Math.max(o.scale.x,o.scale.y,o.scale.z);if(r>45)return;}
+    if(o.userData.act)return;           /* NPC y proxys interactivos se manejan solos */
+    o.updateMatrix();o.matrixAutoUpdate=false;CULL.list.push({o,r,x:o.position.x,z:o.position.z});
+  });
+}
+function stepCull(dt){
+  CULL.t-=dt;if(CULL.t>0)return;CULL.t=.35;
+  const cx=camera.position.x,cz=camera.position.z;let vis=0;
+  for(const c of CULL.list){const d=Math.hypot(c.x-cx,c.z-cz)-c.r,v=d<CULL.R;if(c.o.visible!==v)c.o.visible=v;if(v)vis++;}
+  CULL.n=vis;
+  for(const L of CULL.lights){const d=Math.hypot(L.x-cx,L.z-cz);if(L.on&&d>42){L.on=false;L.l.visible=false;}else if(!L.on&&d<35){L.on=true;L.l.visible=true;}}
+}
+
+/* ================= Frases y nombres de los peatones ================= */
+const SP=s=>s.split('|');
+const FR_BASE=[
+ /* chistes */
+ ...SP("¿Sabe por qué los fotógrafos son tan tranquilos? Porque siempre dicen «relájese, que ya salió bien».|Mi perro quiso ser director de cine, pero solo hacía películas de ladrar.|Trabajo de extra: me pagan por quedarme quieto, y aun así me regañan.|Dicen que el dinero no da la felicidad, pero ayuda a pagar el taxi de regreso.|El que dijo que madrugar es sano nunca tuvo cama.|Yo no ronco: sueño que soy una moto.|Fui al gimnasio y me dijeron que no era el lugar donde se guardan las ganas.|Quise ahorrar y se me inundó la alcancía... de recibos.|Mi horóscopo dice que hoy me va bien. Mi billetera dice «ja».|Soy tan despistado que ayer me saludé en el espejo.|En mi casa mandan los gatos; yo solo pago el alquiler.|¿Cámara lenta? Así me muevo yo después del almuerzo.|El lunes es solo el domingo con corbata.|Intenté ser puntual, pero el reloj y yo tenemos diferencias políticas.|Compré un paraguas y no llovió. Es el mejor amuleto del país.|Me dijeron que hay vida después de los treinta... y también dolor de espalda.|Voy a dejar el café: ya me dejó a mí hace rato.|Un amigo me debe plata y me dice «te la pago en cuanto pueda». Ya hace años que no puede.|Mi dieta empieza mañana. Siempre mañana. Es muy estable.|Si el tiempo es oro, yo vivo en la quiebra.|Ayer vi una nube con forma de pizza. Terminé comprando pizza.|Mi jefe me dijo que pensara fuera de la caja. Ahora trabajo desde la banca del parque.|Me ofrecieron un trabajo de modelo de manos. Es que tengo mucho talento para señalar.|Yo no discuto: me expreso con volumen.|Cuando sea grande quiero ser un adulto responsable, pero me quedan pocas esperanzas.|Dicen que reír alarga la vida. Entonces voy a vivir mucho, con esta ciudad.|El semáforo y yo nos llevamos mal: él siempre pone rojo cuando voy tarde.|Mi abuela decía que el que ríe último ríe mejor. Yo sigo esperando mi turno.|Se me pegó la canción del bus y ya la tarareo hasta dormido.|Pedí un deseo en una fuente y me salió un recibo.|Me fui de dieta y la dieta regresó con refuerzos.|Eso de «hacer cola» debería llamarse «hacer paciencia».|Soy muy simpático: hasta mi ex me bloqueó con cariño.|Siempre llevo paraguas y no sé por qué sigo mojándome.|Ando buscando mi media naranja y solo encuentro limonadas.|En la vida hay que ser como el wifi: fuerte cerca, débil a la distancia.|No soy tacaño: soy un inversionista del descuento.|Me dijo el doctor que camine más. Le contesté que ya camino a la nevera.|Mi gato me ignora con estilo; ya lo contraté de asesor de imagen.|Me quedé sin batería... y también sin ideas. Mal día para ser creativo.")
+ /* tristes */
+ ,...SP("Hay días en los que el cielo parece más lejos que de costumbre.|Antes me sobraba tiempo y me faltaba plata. Ahora es al revés, y tampoco es mejor.|Extraño la voz de mi mamá cuando me llamaba a comer.|A veces siento que la ciudad se rió de mí y yo no me enteré.|Hoy me acordé de alguien y me quedé un rato mirando la nada.|La lluvia me hace pensar en cosas que prefiero no pensar.|Nadie me escribió hoy. Está bien, supongo.|Guardo una foto vieja en la billetera. No sé por qué sigo haciéndolo.|Llevo un cansancio que no se quita durmiendo.|Quisiera volver a ser niño solo por un domingo.|Mi casa está más silenciosa de lo que recordaba.|Se fue mi mejor amigo del barrio y el parque ya no es el mismo.|Perdí algo importante y todavía lo busco en los bolsillos.|La vida pasa rápido cuando uno no se detiene a mirarla... y duele cuando sí.|Hay canciones que ya no puedo escuchar sin que se me nuble la vista.|Prometí llamar y no llamé. Ahora ya es tarde.|Ya no recuerdo cuándo fue la última vez que me sentí tranquilo.|Todos corren, y yo apenas camino. Me siento fuera de ritmo.|Dicen que el tiempo lo cura todo; yo creo que solo lo acomoda en otro cajón.|Me sentaría a conversar, pero ya nadie se queda a escuchar.|A veces me dan ganas de gritar, pero me conformo con suspirar.|Mi abuelo tenía un banco en este parque. Ya no está, pero yo vengo igual.|Ayer vi un perrito callejero y lo entendí perfectamente.|Soñé que todo estaba bien, y al despertar dolió un poquito.|No pasa nada. Solo es uno de esos días largos.|Me gustaría que alguien me preguntara cómo estoy... y esperara la respuesta.")
+ /* filosóficas */
+ ,...SP("Si uno se pierde en la ciudad, ¿es la ciudad la que se perdió de uno?|Todos somos extras en la película de alguien más.|Un semáforo en rojo es la naturaleza pidiéndonos un respiro.|¿Y si las nubes también nos observan y se aburren?|El pasado es un país extranjero, pero sin pasaporte.|Quizá la felicidad es una banca en la sombra y alguien con quien callar.|Lo único constante es que el café se enfría justo cuando uno se distrae.|¿Qué pesa más: un kilo de plumas o un kilo de recuerdos?|Cada día es una toma nueva; nadie dijo que fuera corte final.|Caminar sin rumbo también es una forma de llegar.|Hasta el sol trabaja todos los días y nadie lo felicita.|Un buen plano vale más que mil palabras, pero una buena risa vale más que mil planos.|La memoria es el único cine que se proyecta sin electricidad.|Nadie nace sabiendo, pero todos nacen preguntando.|Quizá el silencio es la mejor banda sonora de la tarde.|Si el espejo pudiera hablar, probablemente pediría perdón.|El tiempo no se pierde; se cambia por cosas que a veces ni recordamos.|Dicen que todo pasa. Yo digo que todo pasa, pero algunas cosas pasan lento.|Cada atardecer es una promesa que se cumple sin pedir nada a cambio.|No hay mal que dure cien años, ni cuerpo que lo resista... pero casi.|Lo importante no es llegar primero, sino llegar con ganas de contar el viaje.|Tal vez el universo es un gran estudio de cine y estamos todos ensayando.|La paciencia es un músculo: se entrena en las filas.|La suerte es solo la preparación encontrando una oportunidad con tiempo libre.|Dar las gracias nunca pasa de moda.")
+ /* ticas */
+ ,...SP("¡Pura vida, mae! Hoy el día anda sabroso.|Diay, ¿y ese milagro verlo por aquí?|Qué charada con este calor, ¡me voy a derretir!|Tuanis, mae, eso sí estuvo bueno.|Mae, ¡qué torta! Se me quedaron las llaves adentro.|Me dijeron que todo es «ya casi», pero uno nunca sabe cuánto tiempo es «ya casi».|¡Upe! ¿Hay alguien en esta ciudad que no esté en una presa?|Ese gallo pinto de doña Lela es la mejor medicina que existe.|Mae, no me haga reír, que tengo la boca llena de pan con natilla.|Qué carga mi jefe con los reportes, mae.|¡Eso es una vara seria, hombre!|Aquí uno no pide agua: pide un fresquito de cas.|Hoy desayuné café chorreado y me siento un rey.|Qué bonito es ver llover, siempre que uno esté bajo techo.|Uy, mae, ¡qué sal la mía! Me cayó la lluvia sin paraguas.|Mejor me voy, que esto está más caro que un taxi en lluvia.|Diay, si no es pura vida, ¿entonces qué es?|El que no se quemó con sopa de olla no ha vivido, mae.|Hoy toca café con rosquilla y a olvidarse de todo.|Se le hizo agua la boca de solo ver las tortillas, ¿verdad?|¡Mae, está de moda llegar tarde a todo! Yo soy un pionero.|Ando a la carrera, pero con pura vida, eso sí.|Mi tía dice que todo se arregla con un cafecito y un buen chisme.|Qué bruto, mae, no vi el hueco y me tragó la calle.|En este país hasta las presas son un buen momento para conversar.|Dios le pague, mae, por esa ayuda.|Aquí uno madruga para esperar el bus y se queda esperando de pie.|Lo bueno de vivir en el trópico es que el aguacero siempre avisa... cuando ya está encima.|Un cafecito, una conversa y se arregla el mundo.|Cuando llueve en Cartago... todo el país lo siente en los zapatos.|¡Qué chiva está la ciudad hoy!")
+ /* cine y producción */
+ ,...SP("¡Luces, cámara y... se me olvidó la línea!|Siempre quise ser extra en una película de acción, pero me dijeron que no sé correr con estilo.|Dicen que en el cine todo es mentira; yo creo que es una verdad mejor iluminada.|Cuidado con las sombras: un buen director las trata como a un amigo.|Mi primo grabó una boda con el celular y salió mejor que la película de moda.|La clave de un buen plano: luz suave y paciencia infinita.|¿Será que el audio es la mitad de la película? Yo creo que sí.|Un dron en el cielo siempre atrae miradas... y a veces a un pájaro enojado.|Dice mi abuelo que en su juventud el cine era un lujo. Hoy es una cosa que se hace con el teléfono.|Detrás de cada escena épica hay alguien cargando un trípode.|En el set todos mandan, pero el que reparte la comida manda más.|Si ve a un tipo gritando «¡corte!», no se asuste: seguro está haciendo cine.|Un travelling bien hecho se siente como flotar en una nube de azúcar.|Mi mejor interpretación fue cuando fingí que me gustaba el café sin azúcar.|El montaje es donde se descubre qué película se grabó realmente.|Una buena banda sonora es un abrazo que no se ve.|Para el mejor documental, necesita un tema, una cámara y mucha curiosidad.|Prefiero la película en que el protagonista llega tarde pero con estilo.|Una vez vi una película tan mala que ya la considero una comedia.|La luz de la hora dorada perdona todo, hasta mis fotos de perfil.|Hay que grabar siempre un poco más: lo mejor sale justo cuando uno ya apagó la cámara.|Con buena música hasta una toma de una pared se vuelve poesía.|Ojalá la vida tuviera un botón de repetir toma, pero para las cosas buenas.|El cine nos enseña que todo cambia con un buen cambio de plano.|Un gimbal bien calibrado es más estable que mi estado de ánimo.|Me contrataron para hacer un reel y terminé editando mi propia vida.")
+];
+/* plantillas combinables */
+const TPL=[
+ {t:'Mi {a} jura que {b}.',a:SP('abuela|primo|cuñado|vecino|tío|suegra|hermana|jefe|profesor de la U|peluquero'),b:SP('el café de esta zona tiene algo raro|los semáforos de esta ciudad se ponen en rojo a propósito|las palomas saben quién le debe plata a quién|el domingo es el lunes con maquillaje|los gatos no tienen dueño, tienen empleados|el wifi funciona peor cuando uno más lo necesita|la lluvia siempre empieza cuando uno estrena zapatos|los espejos engordan, pero solo los lunes|el microondas nos escucha|las gallinas ven más de lo que dicen|el reloj de la plaza va adelantado a propósito|los aguacates maduran apenas uno sale de la casa|la gente que dice «ya casi llego» sigue en pijama|el mejor gallo pinto es el del día anterior|todo se arregla con una siesta|los perros entienden más inglés que uno|las nubes son lentas pero tienen mala leche|los pavos reales trabajan para el gobierno|siempre sobra una tuerca después de arreglar algo|el bus pasa justo cuando uno se sienta a esperar|las bolsas del súper se reproducen en el cajón|la luna se ve más grande cuando uno no trae el celular|los helados se derriten más rápido si uno los mira|el que madruga encuentra todo cerrado|las llaves se esconden cuando uno anda con prisa|los tacos saben mejor si uno no cuenta cuántos se comió|el sol sale por donde le da la gana|los mosquitos pagan impuestos en sangre|el tráfico es un ser vivo y tiene sentimientos|las filas del banco son un portal a otra dimensión')},
+ {t:'Hoy desayuné {a} y {b}.',a:SP('gallo pinto|un pan con natilla|tres cafés|una tortilla con queso|un sándwich misterioso|arroz con leche|un pastel de ayer|plátanos maduros|una empanada de queso|un jugo de naranja|un pinto con huevo|un resto de pizza|un batido verde|una galleta sospechosa'),b:SP('ahora me siento invencible|sigo con hambre|ya quiero otra siesta|casi llego a tiempo|se me olvidó pagar|ya quiero almorzar|me dio por ponerme a bailar|le conté mis penas a un perro|el día no se ve tan mal|perdí las llaves otra vez|me peleé con la tostadora|me sentí en una película|todavía no entiendo mi horóscopo|me hizo pensar en mis decisiones')},
+ {t:'Si {a}, {b}.',a:SP('me ganara la lotería|el bus llegara a tiempo|el café fuera gratis|mi jefe me dijera «buen trabajo»|pudiera volar|los gatos hablaran|el lunes no existiera|llovieran empanadas|el día tuviera 25 horas|el wifi fuera eterno|me dieran un Óscar|el despertador tuviera piedad|mi tía dejara de preguntar si ya tengo novia|el sol no saliera'),b:SP('me dormiría otra vez|compraría una isla y un chinchorro|lloraría de la emoción|abriría una productora de cine|nadie lo creería|pediría un aumento|me iría a la playa sin avisar|mandaría todo a freír espárragos|invitaría a toda la cuadra|haría una película sobre eso|me tomaría un cafecito para celebrar|me pondría a bailar en medio de la calle|seguiría esperando, por si acaso|se lo contaría a todo el mundo')},
+ {t:'No me hable {a}, {b}.',a:SP('del tráfico|de los lunes|de la política|del precio del café|de las filas|del calor|de las reuniones|del futuro|de los impuestos|de las presas|del clima|de la tarea'),b:SP('que hoy ando sensible|que me da dolor de cabeza|que no tengo paciencia|que me arruina el humor|que ya tuve suficiente por hoy|que me recuerda mis deudas|que mi doctor lo prohibió|que mi horóscopo me advirtió|que me da risa nerviosa|que mejor hablemos de comida|que casi lloro la última vez|que ya lo hablé con mi terapeuta imaginario')},
+ {t:'A veces extraño {a}, pero {b}.',a:SP('mi casa de la infancia|los veranos de antes|a mi perro|las tardes con mi abuela|cuando todo era más simple|a mis amigos de la escuela|la música de mi papá|los domingos en familia|mis sueños de joven|a alguien que ya no está|las lluvias de mi pueblo|el olor del pan recién hecho|mi vida de antes|las noches sin preocupaciones'),b:SP('sigo caminando|el tiempo cura casi todo|me quedo con lo bueno|aquí sigo, de pie|hoy toca respirar hondo|al menos tengo mis recuerdos|mañana será otro día|me río para no llorar|me consuela una buena canción|la vida sigue y yo con ella|un café lo hace más llevadero|solo necesito un abrazo')},
+ {t:'Mi sueño es {a}, pero {b}.',a:SP('dirigir una película|ganar un Óscar|hacer un documental|grabar un videoclip|tener mi propio estudio|ser extra en una serie|escribir un guion|salir en una película de acción|filmar una boda épica|ser influencer de cocina|hacer un cortometraje|tocar en una banda'),b:SP('no tengo cámara|me da pena|nadie me contesta el teléfono|mi mamá dice que mejor estudie algo «serio»|se me acaba la batería a media toma|el presupuesto es de cinco colones|mi perro se roba todas las escenas|siempre llueve el día del rodaje|el micrófono nunca funciona|nadie quiere cargar el trípode|el sol sale por donde le da la gana|mi guion tiene un solo diálogo: «mae»')}
+];
+const FR_ALL=(()=>{const out=new Map();const tone=(s)=>/extraño|triste|llor|dolor|sola|nadie|perdí|ya no|silencio/i.test(s)?'😢':/\?|quizá|tal vez|universo|tiempo/i.test(s)?'🤔':'😄';
+  FR_BASE.forEach(s=>out.set(s,tone(s)));
+  TPL.forEach(T=>T.a.forEach(a=>T.b.forEach(b=>{const s=T.t.replace('{a}',a).replace('{b}',b);out.set(s,tone(s));})));
+  return [...out.entries()];})();
+const NM_M=SP('Marco|Luis|Mateo|Diego|Andrés|Carlos|Jorge|Pablo|Esteban|Fabián|Gerardo|Hugo|Iván|Josué|Kevin|Leonardo|Mauricio|Nelson|Óscar|Rafael|Santiago|Tomás|Uriel|Víctor|William|Xavier|Yoel|Adrián|Bruno|César|Daniel|Eduardo|Federico|Gabriel|Héctor|Ismael|Julián|Kenneth|Lorenzo|Manuel|Nicolás|Orlando|Rodrigo|Sebastián|Tadeo|Ulises|Valentín|Walter|Alonso|Álvaro|Bernardo|Cristian|Dylan|Emilio|Felipe|Gustavo|Hernán|Ignacio|Joaquín');
+const NM_F=SP('Ana|Sofía|Valeria|Camila|Daniela|Lucía|María|Elena|Paola|Carolina|Natalia|Andrea|Beatriz|Cristina|Diana|Emilia|Fernanda|Gabriela|Helena|Isabel|Jimena|Karla|Laura|Mónica|Noelia|Olga|Patricia|Raquel|Silvia|Tatiana|Ursula|Vanessa|Ximena|Yazmín|Zaira|Adriana|Brenda|Catalina|Dayana|Estefanía|Fabiola|Graciela|Hilda|Inés|Johanna|Katia|Lorena|Marcela|Nadia|Ofelia|Pamela|Rebeca|Sara|Teresa|Viviana|Wendy|Yolanda|Alejandra|Julieta|Milagro');
+const NM_L=SP('Vargas|Rodríguez|Jiménez|Mora|Solano|Araya|Chaves|Quesada|Salazar|Ramírez|Campos|Villalobos|Alfaro|Calderón|Cordero|Rojas|Zúñiga|Brenes|Arce|Barrantes|Segura|Madrigal|Sánchez|Murillo|Obando|Esquivel|Valverde|Cascante|Monge|Soto|Umaña|Badilla|Acuña|Leitón|Porras|Fonseca|Guillén|Hidalgo|Montero|Navarro|Ortega|Pacheco|Quirós|Rivera|Sandí|Trejos|Ugalde|Venegas|Zamora|Bonilla|Carvajal|Dobles|Elizondo|Fallas|Gamboa|Herrera|Ibarra|Lizano|Marín');
+const NM_A=SP('el Chino|la Flaca|el Gordo|Chepe|la Negra|el Pelón|Tico|la Güera|el Mono|Pocho|la Chiqui|el Cholo|Chelita|el Brujo|Cuco|la Muñeca|el Flaco|Nacho|la Pecosa|Tano|el Zurdo|la Pulga|Beto|Mima|el Rayo|la Gata|Pipo|el Profe|Chuta|la Doña');
+const nameF=(g)=>{const n=g==='f'?pick(NM_F):pick(NM_M),l=pick(NM_L);return Math.random()<.18?n+' «'+pick(NM_A)+'» '+l:n+' '+l;};
+
+/* ================= Peatones: pool reciclado alrededor del jugador ================= */
+const ZONES=[
+ {id:'acera N',line:true,x0:-18,x1:490,z0:13.0,z1:13.9,w:7},
+ {id:'acera S',line:true,x0:-18,x1:490,z0:21.2,z1:22.3,w:7},
+ {id:'parque',x0:84,x1:136,z0:28,z1:62,w:3},
+ {id:'mercado',x0:150,x1:192,z0:30,z1:58,w:3},
+ {id:'playa',x0:402,x1:458,z0:28,z1:62,w:2},
+ {id:'cancha',x0:62,x1:90,z0:14.5,z1:16.3,w:1},
+ {id:'entrada casino',x0:34,x1:58,z0:13.2,z1:14.2,w:1}
+];
+const PED={list:[],N:14,max:22,t:0,vis:[]};
+const zoneNear=(z,px,pz)=>{const x=clamp(px,z.x0,z.x1),zz=clamp(pz,z.z0,z.z1);return Math.hypot(x-px,zz-pz);};
+function zonePoint(z,px){const x=z.line?clamp(px+rnd(-28,28),z.x0,z.x1):rnd(z.x0,z.x1);return [x,rnd(z.z0,z.z1)];}
+function newPed(){const g=makePerson(pick(SHIRT),pick(SKIN),pick([0x2a3140,0x3b4a3a,0x4a3a2a,0x23283a,0x5a4a30]),pick([0x2b2118,0x6b4228,0x111111,0xc9a24a,0x999999]));
+  const p={g,name:'',state:'off',zone:null,tx:0,tz:0,pause:0,hp:3,sp:1.3,armed:false,fireT:0,deadT:0,say:0};g.visible=false;PED.list.push(p);return p;}
+function pedActOn(p,on){p.g.userData.act=on?{label:()=>pedLabel(p),fn:()=>pedTalk(p)}:null;const k=interactables.indexOf(p.g);if(on&&k<0)interactables.push(p.g);if(!on&&k>=0)interactables.splice(k,1);}
+function pedLabel(p){return (p.state==='walk'||p.state==='idle')?'Hablar con '+p.name:null;}
+function spawnPed(p){
+  const px=P.x,pz=P.z,zs=ZONES.filter(z=>zoneNear(z,px,pz)<80);if(!zs.length)return false;
+  for(let tries=0;tries<8;tries++){let r=Math.random()*zs.reduce((a,z)=>a+z.w,0),z=zs[0];for(const q of zs){r-=q.w;if(r<=0){z=q;break;}}
+    const [x,zz]=zonePoint(z,px),d=Math.hypot(x-px,zz-pz);if(d<24||d>78||blocked(x,zz,.5))continue;
+    p.zone=z;p.g.position.set(x,0,zz);p.g.rotation.set(0,rnd(0,6.28),0);p.name=nameF(Math.random()<.5?'f':'m');p.state='walk';p.hp=3;p.armed=false;p.sp=rnd(1.0,1.6);p.pause=rnd(0,3);
+    [p.tx,p.tz]=zonePoint(z,x);p.g.visible=true;setBubble(p.g,'');pedActOn(p,true);return true;}
+  return false;}
+function recyclePed(p){p.state='off';p.g.visible=false;p.g.rotation.x=0;setBubble(p.g,'');pedActOn(p,false);}
+function pedTalk(p){
+  if(p.state!=='walk'&&p.state!=='idle')return;
+  const [s,t]=pick(FR_ALL);p.state='idle';p.pause=4.5;p.g.rotation.y=Math.atan2(P.x-p.g.position.x,P.z-p.g.position.z);setBubble(p.g,t);
+  toast(t+' '+p.name+': «'+s+'»',5600);beep(520,.04,'triangle',.03);
+}
+function stepPeds(dt){
+  PED.t-=dt;
+  if(PED.t<=0){PED.t=.7;if(PED.list.length<PED.N)newPed();const off=PED.list.find(p=>p.state==='off');if(off)spawnPed(off);}
+  const px=P.x,pz=P.z;
+  for(const p of PED.list){
+    if(p.state==='off')continue;
+    const g=p.g,dx0=g.position.x-px,dz0=g.position.z-pz,dist=Math.hypot(dx0,dz0);
+    if(dist>(p.state==='flee'?85:98)&&p.state!=='hostile'){recyclePed(p);continue;}
+    if(p.state==='hostile'&&dist>85){recyclePed(p);continue;}
+    g.visible=dist<125;
+    if(p.state==='dead'){p.deadT+=dt;if(p.deadT>9)recyclePed(p);continue;}
+    if(p.state==='down'){p.deadT+=dt;if(p.deadT>2.8){p.deadT=0;g.rotation.x=0;p.state='flee';setBubble(g,'😱');}continue;}
+    let moving=false;
+    if(p.state==='walk'||p.state==='idle'){
+      if(p.state==='idle'){p.pause-=dt;if(p.pause<=0)p.state='walk';}
+      else if(p.pause>0)p.pause-=dt;
+      else{const dx=p.tx-g.position.x,dz=p.tz-g.position.z,d=Math.hypot(dx,dz);
+        if(d<.3){p.pause=rnd(1,5);[p.tx,p.tz]=zonePoint(p.zone,g.position.x);}
+        else{const nx=g.position.x+dx/d*p.sp*dt,nz=g.position.z+dz/d*p.sp*dt;if(blocked(nx,nz,.35)){p.pause=.6;[p.tx,p.tz]=zonePoint(p.zone,g.position.x);}else{g.position.x=nx;g.position.z=nz;g.rotation.y=Math.atan2(dx,dz);moving=true;}}}
+    }else if(p.state==='flee'){
+      const dx=dx0,dz=dz0,d=Math.max(.01,dist),sp=5.6;let nx=g.position.x+dx/d*sp*dt,nz=g.position.z+dz/d*sp*dt;
+      if(blocked(nx,nz,.35)){nx=g.position.x+(-dz/d)*sp*dt;nz=g.position.z+(dx/d)*sp*dt;}
+      if(!blocked(nx,nz,.35)){g.position.x=nx;g.position.z=nz;}g.rotation.y=Math.atan2(dx,dz);moving=true;
+    }else if(p.state==='hostile'){hostileStep(p,dt,dist);moving=p.mv;}
+    if(dist<48)walkAnim(g,moving,dt*(p.state==='flee'?1.7:1));
+  }
+}
+
+/* ================= Cancha de básquetbol (x 62–90, z 0–12) ================= */
+box(28,.06,12,0xb85a34,76,0,6,{cast:false});
+plane(28,12,canvasTex(560,240,(g,w,hh)=>{g.clearRect(0,0,w,hh);g.strokeStyle='#fff';g.lineWidth=5;g.strokeRect(6,6,w-12,hh-12);g.beginPath();g.moveTo(w/2,6);g.lineTo(w/2,hh-6);g.stroke();g.beginPath();g.arc(w/2,hh/2,36,0,7);g.stroke();
+  for(const s of[0,1]){const x0=s?w-6:6,dir=s?-1:1;g.strokeRect(s?w-6-114:6,hh/2-40,114,80);g.beginPath();g.arc(x0+dir*114,hh/2,40,s?Math.PI/2:-Math.PI/2,s?Math.PI*1.5:Math.PI/2);g.stroke();g.beginPath();g.arc(x0+dir*40,hh/2,150,s?Math.PI*.62:-Math.PI*.38,s?Math.PI*1.38:Math.PI*.38);g.stroke();}}),76,.045,6,0,false).rotation.x=-Math.PI/2;
+const HOOPS=[{bx:63.15,rx:63.65,rz:6,dir:1},{bx:88.85,rx:88.35,rz:6,dir:-1}];
+HOOPS.forEach(H=>{cyl(.07,3.6,0x555a62,H.bx-H.dir*.5,0,H.rz);box(.12,1.05,1.8,0xf2f2f2,H.bx,2.85,H.rz,{});box(.04,.45,.6,0xd0452f,H.bx+H.dir*.07,3.15,H.rz,{cast:false});
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.23,.02,8,20),new THREE.MeshStandardMaterial({color:0xff5a1f}));rim.rotation.x=Math.PI/2;rim.position.set(H.rx,3.05,H.rz);scene.add(rim);
+  const net=new THREE.Mesh(new THREE.CylinderGeometry(.23,.14,.4,10,1,true),new THREE.MeshBasicMaterial({color:0xffffff,wireframe:true,transparent:true,opacity:.6}));net.position.set(H.rx,2.85,H.rz);scene.add(net);});
+/* balón */
+const BB={held:false,charge:0,charging:false,v:new THREE.Vector3(),live:false,idle:0,from:[0,0],made:0,tries:0,M:null,res:0};
+const ballMesh=new THREE.Mesh(new THREE.SphereGeometry(.12,16,12),new THREE.MeshStandardMaterial({map:canvasTex(128,64,(g,w,hh)=>{g.fillStyle='#d9631e';g.fillRect(0,0,w,hh);g.strokeStyle='#2a1208';g.lineWidth=3;for(let i=0;i<=4;i++){g.beginPath();g.moveTo(i*w/4,0);g.lineTo(i*w/4,hh);g.stroke();}g.beginPath();g.moveTo(0,hh/2);g.lineTo(w,hh/2);g.stroke();}),roughness:.8}));
+ballMesh.position.set(76,.12,9.6);ballMesh.castShadow=true;scene.add(ballMesh);
+ballMesh.userData.act={label:()=>BB.held||BB.live?null:'Recoger balón',fn:()=>takeBall()};interactables.push(ballMesh);
+const handBall=new THREE.Mesh(ballMesh.geometry,ballMesh.material);handBall.position.set(.2,-.25,-.55);handBall.scale.setScalar(1.15);handBall.visible=false;hand.add(handBall);
+const COURT_C=[76,6];
+function takeBall(){BB.held=true;BB.live=false;ballMesh.visible=false;BB.v.set(0,0,0);toast('Mantén clic izquierdo para cargar el tiro y suéltalo con la barra en la zona verde. Q suelta el balón.',5200);}
+function dropBall(){if(!BB.held)return;BB.held=false;BB.charging=false;ballMesh.visible=true;ballMesh.position.set(P.x-Math.sin(P.yaw)*.8,.12,P.z-Math.cos(P.yaw)*.8);BB.live=false;}
+addEventListener('keydown',e=>{if(e.code==='KeyQ'&&BB.held&&!modal)dropBall();});
+/* rivales */
+const RIV=[['Mauro',.34,0x3f88c5,72,5.2],['Kike',.48,0x7fb069,80,7.2],['Dani',.6,0xb565a7,76,2.8]];
+const rivNPC=RIV.map(([n,sk,c,x,z])=>{const g=makePerson(c,pick(SKIN),0x23283a,0x111111);g.position.set(x,0,z);g.rotation.y=Math.atan2(76-x,6-z);setBubble(g,'🏀');
+  g.userData.act={label:()=>BB.M?null:'Retar a '+n+' a 1 contra 1 · '+$$(20)+' (a 10 puntos)',fn:()=>startMatch(n,sk)};interactables.push(g);return g;});
+function startMatch(n,sk){if(BB.M)return;if(S.cash<20){toast('Necesitas $20 para la apuesta.');return;}spend(20);BB.M={n,sk,you:0,opp:0};if(!BB.held){takeBall();}toast('Partido contra '+n+': primero a 10. Tú tiras primero.',4200);bbHud();}
+function bbHud(){const el=$('#bbhud');if(!BB.M){el.style.display='none';return;}el.style.display='block';el.textContent='🏀 Tú '+BB.M.you+' – '+BB.M.opp+' '+BB.M.n+' · a 10';}
+function nearestHoop(x,z,dx,dz){let best=null,bs=-9;HOOPS.forEach(H=>{const vx=H.rx-x,vz=H.rz-z,d=Math.hypot(vx,vz),dot=(vx*dx+vz*dz)/d;if(dot>.55&&d<22&&dot>bs){bs=dot;best=H;}});return best;}
+function throwBall(ch){
+  BB.held=false;BB.charging=false;BB.live=true;BB.idle=0;BB.matchDone=false;ballMesh.visible=true;BB.res=0;
+  const dir=new THREE.Vector3();camera.getWorldDirection(dir);const sp=camera.position.clone().addScaledVector(dir,.45);sp.y-=.12;ballMesh.position.copy(sp);
+  BB.from=[sp.x,sp.z];BB.tries++;
+  const H=nearestHoop(sp.x,sp.z,dir.x,dir.z);const f=.85+.3*ch;
+  if(H){const dx=H.rx-sp.x,dz=H.rz-sp.z,d=Math.hypot(dx,dz),th=Math.atan(.9)+.12,dy=3.05-sp.y;const den=2*Math.cos(th)**2*(d*Math.tan(th)-dy);const vi=den>0?Math.sqrt(9.8*d*d/den):9;
+    const ha=Math.atan2(dx,dz),ca=Math.atan2(dir.x,dir.z);let da=ca-ha;da=Math.atan2(Math.sin(da),Math.cos(da));const aim=ha+da*.35;const v=vi*f;
+    BB.v.set(Math.sin(aim)*Math.cos(th)*v,Math.sin(th)*v,Math.cos(aim)*Math.cos(th)*v);BB.far=Math.hypot(sp.x-H.rx,sp.z-H.rz)>6.75;}
+  else{const v=6+ch*9;BB.v.copy(dir).multiplyScalar(v);BB.v.y+=2.5;BB.far=false;}
+  beep(300,.05,'triangle',.04);
+}
+function stepBall(dt){
+  if(BB.held){handBall.visible=true;if(BB.charging)BB.charge=Math.min(1,BB.charge+dt/1.3);
+    const el=$('#bbbar');el.style.display=BB.charging?'block':'none';if(BB.charging){$('#bbfill').style.width=BB.charge*100+'%';}}
+  else{handBall.visible=false;$('#bbbar').style.display='none';}
+  if(!BB.live)return;
+  const sub=4,h_=dt/sub;
+  for(let i=0;i<sub;i++){const p=ballMesh.position,py=p.y;BB.v.y-=9.8*h_;p.addScaledVector(BB.v,h_);
+    for(const H of HOOPS){
+      if(Math.abs(p.z-H.rz)<.95&&p.y>2.85&&p.y<3.95&&((H.dir>0&&p.x<H.bx+.12&&p.x>H.bx-.1&&BB.v.x<0)||(H.dir<0&&p.x>H.bx-.12&&p.x<H.bx+.1&&BB.v.x>0))){BB.v.x*=-.5;p.x=H.bx+H.dir*.14;beep(200,.05,'square',.04);}
+      if(py>3.05&&p.y<=3.05&&BB.v.y<0){const d=Math.hypot(p.x-H.rx,p.z-H.rz);
+        if(d<.27&&!BB.res){BB.res=1;scoreBall();}else if(d<.42){BB.v.y*=-.35;BB.v.x+=rnd(-1.5,1.5);BB.v.z+=rnd(-1.5,1.5);p.y=3.08;beep(180,.06,'square',.05);}}}
+    if(p.y<=.12){p.y=.12;if(Math.abs(BB.v.y)>1.2){BB.v.y*=-.72;BB.v.x*=.85;BB.v.z*=.85;beep(160,.04,'sine',.06);if(!BB.res)BB.res=2;}else BB.v.y=0;}
+  }
+  if(ballMesh.position.y<=.13){BB.v.x*=Math.max(0,1-dt*1.2);BB.v.z*=Math.max(0,1-dt*1.2);}
+  const sp=Math.hypot(BB.v.x,BB.v.z);if(ballMesh.position.y<=.13&&sp<.25){BB.idle+=dt;}else BB.idle=0;
+  /* resolución del tiro: cuando toca el piso o encesta */
+  if(BB.M&&BB.res&&!BB.matchDone){BB.matchDone=true;setTimeout(()=>oppTurn(BB.res===1),700);}
+  if(BB.idle>1.6||ballMesh.position.distanceTo(camera.position)>60){BB.live=false;if(BB.M&&!BB.matchDone){BB.matchDone=true;oppTurn(false);}
+    if(!BB.M&&Math.hypot(ballMesh.position.x-76,ballMesh.position.z-6)>20)ballMesh.position.set(76,.12,9.6);}
+}
+function scoreBall(){const pts=BB.far?3:2;BB.made++;pop('¡CANASTA! +'+pts,'#ffb347');sCash();
+  if(BB.M){BB.M.you+=pts;bbHud();}else toast('🏀 Encestadas: '+BB.made+' de '+BB.tries+(BB.far?' · ¡triple!':''),2600);}
+function oppTurn(){
+  const M=BB.M;if(!M){return;}
+  if(M.you>=10){endMatch(true);return;}
+  const ok=Math.random()<M.sk,pts=ok?(Math.random()<.25?3:2):0;if(ok)M.opp+=pts;bbHud();
+  toast(ok?M.n+' encesta '+pts+' puntos':M.n+' falla el tiro',2200);
+  if(M.opp>=10){endMatch(false);return;}
+  setTimeout(()=>{if(!BB.M)return;ballMesh.visible=false;BB.live=false;if(!BB.held)takeBall();},1100);
+}
+function endMatch(win){const M=BB.M;BB.M=null;bbHud();if(win){const prize=60;S.cash+=prize;addXp(25);S.rep+=1;pop('¡GANASTE! +'+$$(prize-20),'#5fd39a');sCash();toast('Le ganaste a '+M.n+' '+M.you+' a '+M.opp+'.',4200);}else{toast(M.n+' te ganó '+M.opp+' a '+M.you+'. Revancha cuando quieras.',4200);beep(200,.2,'sawtooth',.05);}}
+
+/* ================= Callejón, armas y combate ================= */
+ITEMS.pis={ic:'🔫',n:()=>'Pistola 9 mm',own:()=>S.arm.pis>0,d:'Daño 1 · cadencia media. Clic izq. dispara.',gun:true};
+ITEMS.rev={ic:'🔫',n:()=>'Revólver .38',own:()=>S.arm.rev>0,d:'Daño 2 · cadencia lenta.',gun:true};
+const GUN={pis:{dmg:1,cd:.24,spread:.02,price:650,lvl:1,n:'Pistola 9 mm'},rev:{dmg:2,cd:.62,spread:.012,price:1300,lvl:3,n:'Revólver .38'}};
+const isGun=k=>k==='pis'||k==='rev';
+{const g=handItems.pis=new THREE.Group();box(.07,.1,.26,0x1b1d22,.26,-.25,-.55,{parent:g,cast:false});box(.06,.16,.08,0x2a2d33,.26,-.35,-.46,{parent:g,cast:false});hand.add(g);g.visible=false;}
+{const g=handItems.rev=new THREE.Group();box(.07,.09,.32,0x555a62,.26,-.25,-.58,{parent:g,cast:false});cyl(.06,.09,0x444,.26,-.26,-.5,{parent:g,cast:false}).rotation.x=Math.PI/2;box(.06,.17,.08,0x6a3f22,.26,-.36,-.44,{parent:g,cast:false});hand.add(g);g.visible=false;}
+/* callejón entre dos edificios del lado sur (x -12..-9) */
+const ALW=0x4a3b36;
+box(3,.05,10,0x1c1c20,-10.5,0,29.5,{cast:false});box(3.4,6,.3,ALW,-10.5,0,34.65,{col:true});box(.3,6,3.6,ALW,-12,0,32.8,{col:true});box(.3,6,3.6,ALW,-9,0,32.8,{col:true});
+box(1.6,1.1,.9,0x2f5a3a,-11.1,0,33.7,{col:true});box(.8,.6,.8,0x7a5a3a,-9.8,0,31.4,{col:true});box(.7,.5,.7,0x6a4a2a,-9.8,.6,31.4,{});
+const aLamp=new THREE.PointLight(0xff3a2a,.8,10,1.6);aLamp.position.set(-10.5,2.6,31);scene.add(aLamp);ball(.12,0xff5544,-10.5,2.6,31,{mat:new THREE.MeshStandardMaterial({color:0xff3322,emissive:0xff2211,emissiveIntensity:1.4})});
+const dealerNPC=makePerson(0x222226,0xc68a5b,0x15151a,0x111111);dealerNPC.position.set(-10.5,0,32.7);dealerNPC.rotation.y=Math.PI;
+dealerNPC.userData.act={label:()=>'Hablar con «el Flaco» (vendedor)',fn:()=>openArms()};interactables.push(dealerNPC);
+function openArms(){
+  const root=h('div',{style:'display:flex;flex-direction:column;gap:8px'});
+  const draw=()=>{root.textContent='';root.append(h('h2',{text:'El Flaco'}),h('p',{style:'color:var(--fg)',text:'«Shhh. Aquí no vio nada y yo no le vendí nada. ¿Qué anda buscando?»'}),h('small',{style:'color:var(--mut)',text:'Caja: '+$$(S.cash)+' · Balas: '+S.arm.ammo+' · Disparar a la gente tiene consecuencias: reputación, vida y gente que responde.'}));
+    for(const k of['pis','rev']){const G=GUN[k],has=S.arm[k]>0,lock=level()<G.lvl;
+      root.append(rowEl(G.n,'Daño '+G.dmg+' · '+(k==='pis'?'cadencia media':'cadencia lenta')+' · precio '+$$(G.price),has?h('span',{class:'pill good',text:'Comprada'}):h('button',{class:'pri',disabled:S.cash<G.price||lock,onclick:()=>{spend(G.price);S.arm[k]=1;if(S.arm.ammo<12)S.arm.ammo=12;const e=S.hot.indexOf(null);if(e>=0&&!S.hot.includes(k))S.hot[e]=k;beep(300,.1,'square',.05);toast('Compraste: '+G.n+' · en tu hotbar (tecla '+(S.hot.indexOf(k)+1)+')',4200);draw();}},lock?'Nivel '+G.lvl:'Comprar')));}
+    root.append(rowEl('Caja de balas (x30)','Munición para pistola y revólver · '+$$(60),h('button',{class:'pri',disabled:S.cash<60||(S.arm.pis+S.arm.rev<1),onclick:()=>{spend(60);S.arm.ammo+=30;beep(300,.06,'square',.04);draw();}},'Comprar')),h('button',{onclick:()=>closeModal()},'Irme'));};
+  draw();openModal('arms',root);
+}
+/* ---- salud del jugador ---- */
+P.hp=100;let hurtT=0,lastHit=-99;
+function hurtPlayer(n){P.hp=Math.max(0,P.hp-n);lastHit=performance.now()/1000;$('#hurt').style.opacity=.55;setTimeout(()=>$('#hurt').style.opacity=0,220);beep(150,.1,'sawtooth',.06);
+  if(P.hp<=0)playerDown();}
+function playerDown(){
+  PED.list.forEach(p=>{if(p.state==='hostile'){p.state='flee';setBubble(p.g,'');}});
+  const fee=Math.round(S.cash*.15);spend(fee);S.min=Math.min(S.min+150,DAY_END-30);
+  fadeTo(()=>{if(V.drive)exitVan();P.x=6.4;P.z=14.8;P.y=0;P.yaw=Math.PI;P.pitch=0;P.hp=55;toast('🏥 Te desmayaste y despertaste en la clínica. Gastos médicos: '+$$(fee)+'.',6000);});
+}
+let gunT=0;
+const gray=new THREE.Raycaster();gray.far=90;
+function fireGun(){
+  const k=heldItem();if(!isGun(k))return;const G=GUN[k],now=performance.now()/1000;if(now<gunT)return;
+  if(S.arm.ammo<=0){toast('Sin balas. Compra más con el Flaco.');gunT=now+.4;beep(900,.03,'square',.03);return;}
+  gunT=now+G.cd;S.arm.ammo--;beep(110,.12,'sawtooth',.1);beep(60,.2,'square',.08);flash();P.pitch=clamp(P.pitch+.03,-1.45,1.45);
+  const sp=G.spread*(P.aim?.4:1)*(Math.hypot(MV.vx,MV.vz)>2?2.2:1);
+  gray.setFromCamera({x:rnd(-sp,sp)*4,y:rnd(-sp,sp)*4},camera);
+  const targets=PED.list.filter(p=>(p.state!=='off'&&p.state!=='dead')&&p.g.visible).map(p=>p.g);
+  const hits=gray.intersectObjects(targets,true);if(!hits.length)return;
+  const hit=hits[0];let g=hit.object;while(g&&!PED.list.some(p=>p.g===g))g=g.parent;const p=g&&PED.list.find(q=>q.g===g);if(!p)return;
+  const stat=CULL.list.filter(c=>c.o.visible).map(c=>c.o);const wall=gray.intersectObjects(stat,false);if(wall.length&&wall[0].distance<hit.distance)return;
+  hurtPed(p,G.dmg);
+}
+function hurtPed(p,dmg){
+  p.hp-=dmg;S.rep=Math.max(0,S.rep-.4);pedActOn(p,false);
+  if(p.hp<=0){p.state='dead';p.deadT=0;p.g.rotation.x=-Math.PI/2;setBubble(p.g,'');S.rep=Math.max(0,S.rep-3);toast('Cayó '+p.name+'. Tu reputación baja.',2600);scareAround(p,18,.7);return;}
+  const r=Math.random();
+  if(r<.5){p.state='flee';setBubble(p.g,'😱');}
+  else if(r<.78){p.state='hostile';p.armed=true;p.fireT=.9;p.mv=false;setBubble(p.g,'😠');toast('¡'+p.name+' sacó un arma y te dispara!',3000);}
+  else{p.state='down';p.deadT=0;p.g.rotation.x=-Math.PI/2;setBubble(p.g,'😵');}
+  scareAround(p,16,.6);
+}
+function scareAround(src,r,prob){PED.list.forEach(q=>{if(q===src||q.state==='off'||q.state==='dead'||q.state==='hostile')return;if((q.state==='walk'||q.state==='idle')&&Math.hypot(q.g.position.x-src.g.position.x,q.g.position.z-src.g.position.z)<r&&Math.random()<prob){q.state='flee';setBubble(q.g,'😱');pedActOn(q,false);}});}
+function hostileStep(p,dt,dist){
+  const g=p.g;g.rotation.y=Math.atan2(P.x-g.position.x,P.z-g.position.z);p.mv=false;
+  if(dist>11){const sp=2.8,nx=g.position.x+(P.x-g.position.x)/dist*sp*dt,nz=g.position.z+(P.z-g.position.z)/dist*sp*dt;if(!blocked(nx,nz,.35)){g.position.x=nx;g.position.z=nz;p.mv=true;}}
+  p.fireT-=dt;if(p.fireT<=0&&dist<32){p.fireT=rnd(1.1,1.8);const chance=clamp(.42-dist*.014-(Math.hypot(MV.vx,MV.vz)>3?.12:0)-(MV.air?.1:0),.08,.5);
+    beep(130,.08,'sawtooth',.05);if(Math.random()<chance)hurtPlayer(rnd(5,9));else if(Math.random()<.5)toast('Una bala pasó cerca...',900);}
+}
+function stepHealth(dt){
+  const hostile=PED.list.some(p=>p.state==='hostile'),now=performance.now()/1000;
+  if(!hostile&&now-lastHit>6&&P.hp<100)P.hp=Math.min(100,P.hp+dt*1.5);
+  const pct=P.hp/100;$('#hpbar').style.width=pct*100+'%';$('#hpbox').style.display=(P.hp<100||S.arm.pis+S.arm.rev>0)?'block':'none';
+  const k=heldItem(),am=$('#ammo');if(isGun(k)){am.style.display='block';am.textContent='🔫 '+GUN[k].n+' · balas: '+S.arm.ammo;}else am.style.display='none';
+}
 /* ================= Teléfono ================= */
 let phoneTab='res',phoneBody=null,phoneTabs=null;
 const PT=[['res','Resumen'],['enc','Encargos'],['map','Mapa'],['tie','Tienda'],['per','Personal'],['ads','Anuncios'],['mas','Más']];
@@ -1195,7 +1458,7 @@ function renderHot(){const sig=S.hot.join()+'|'+S.sel+'|'+G_('camara')+G_('audio
   for(let i=0;i<9;i++){const k=S.hot[i],ok=k&&ITEMS[k]&&ITEMS[k].own();hb.append(h('div',{class:'slot'+(i===S.sel?' sel':''),title:ok?ITEMS[k].n():''},h('i',{text:String(i+1)}),ok?h('span',{text:ITEMS[k].ic}):null,ok?h('small',{text:ITEMS[k].n()}):null));}}
 let tipSig='';
 function vfTips(){const el=$('#vftips');let tips=[];
-  if(P.aim&&started&&!modal&&!V.drive){if(RS&&!RS.done)tips=RS.tips||[];else{const c=customers.find(x=>x.state==='shoot');if(c&&!P.loc){const i=shotInfo(c);tips=i.tips.slice();tips.unshift('Calidad estimada: '+pct(i.q));if(!i.tips.length)tips.push('✔ Encuadre, luz y distancia bien: ¡dispara!');}}}
+  if(P.aim&&started&&!modal&&!V.drive&&!isGun(heldItem())){if(RS&&!RS.done)tips=RS.tips||[];else{const c=customers.find(x=>x.state==='shoot');if(c&&!P.loc){const i=shotInfo(c);tips=i.tips.slice();tips.unshift('Calidad estimada: '+pct(i.q));if(!i.tips.length)tips.push('✔ Encuadre, luz y distancia bien: ¡dispara!');}}}
   const sig=tips.join('|');if(sig!==tipSig){tipSig=sig;el.textContent='';tips.forEach(t=>el.append(h('div',{text:t})));}el.style.display=tips.length?'block':'none';}
 function compass(){const d=dest(),el=$('#compass');
   if(!d||RS||modal||!started){el.style.display='none';BEACON.visible=false;return;}
@@ -1205,27 +1468,28 @@ function compass(){const d=dest(),el=$('#compass');
   BEACON.visible=dist>12;BEACON.position.set(d.x,35,d.z);}
 
 /* ================= Bucle principal ================= */
-let perfT=0,perfN=0,pr=Math.min(window.devicePixelRatio||1,1.75);const FOV0=72;let last=performance.now(),hudT=0,saveT=0,bob=0;
+let frameN=0,perfT=0,perfN=0,pr=Math.min(window.devicePixelRatio||1,1.75);const FOV0=72;let last=performance.now(),hudT=0,saveT=0,bob=0;
 function frame(now){
   const rdt=(now-last)/1000;const dt=Math.min(.05,rdt);last=now;
   perfT+=rdt;perfN++;if(perfT>2.5){const fps=perfN/perfT;perfT=0;perfN=0;if(fps<26&&pr>.7){pr=Math.max(.7,pr-.3);renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight);}}
+  frameN++;if(frameN%3===0)renderer.shadowMap.needsUpdate=true;stepCull(dt);
   if(started&&!paused){
     const timeRuns=!(modal&&modal.kind==='day')&&!dayEnding;
     if(timeRuns){S.min+=dt*MIN_PER_SEC;
       if(S.open&&S.min>=CLOSE_AT){S.open=false;paintSign();toast('Son las 18:00: el estudio cerró por hoy.');}
       if(S.min>=DAY_END)endDay();}
     if(!P.loc&&nearStudio()){stepCustomers(dt);stepStaff(dt);for(const c of customers){if(c.state==='edit'&&c.order&&c.order.done){c.state='topay';c.path=[[5.5,7.0],[5.5,10.6],SPOT.pay];setBubble(c.g,'');}}}
-    movePlayer(dt);stepShoot(dt);
+    movePlayer(dt);stepShoot(dt);stepPeds(dt);stepHealth(dt);stepBall(dt);
     saveT+=dt;if(saveT>15){saveT=0;save();}
   }
   /* cámara */
   const moving=started&&!modal&&(keys.has('KeyW')||keys.has('KeyA')||keys.has('KeyS')||keys.has('KeyD'));bob+=moving?dt*8:0;
-  const held=heldItem();let cx=P.x,cy=1.65+P.y+(moving&&!V.drive?Math.sin(bob)*.025:0),cz=P.z;
+  const held=heldItem();let cx=P.x,cy=1.65+P.y+MV.jy+(moving&&!V.drive&&!MV.air?Math.sin(bob)*.025:0),cz=P.z;
   if(V.drive){cx=V.x-Math.sin(V.h)*8;cz=V.z-Math.cos(V.h)*8;cy=3.9;}else if(held==='dron'&&P.aim)cy+=9;
   camera.position.set(cx,cy,cz);look();
-  const tf=P.aim?Math.max(26,44-4*G_('lentes')):FOV0;if(Math.abs(camera.fov-tf)>.1){camera.fov+=(tf-camera.fov)*Math.min(1,dt*11);camera.updateProjectionMatrix();}
-  hand.visible=!P.aim&&!V.drive;for(const k in handItems)handItems[k].visible=(k===held);
-  $('#vf').style.display=P.aim&&started&&!modal&&!V.drive?'block':'none';
+  const tf=P.aim?(isGun(held)?58:Math.max(26,44-4*G_('lentes'))):FOV0;if(Math.abs(camera.fov-tf)>.1){camera.fov+=(tf-camera.fov)*Math.min(1,dt*11);camera.updateProjectionMatrix();}
+  hand.visible=(!P.aim||isGun(held))&&!V.drive;for(const k in handItems)handItems[k].visible=(k===held)&&!BB.held;
+  $('#vf').style.display=P.aim&&started&&!modal&&!V.drive&&!isGun(held)?'block':'none';
   renderHot();vfTips();compass();
   if(!(P.aim&&RS))$('#vf').classList.remove('recing');
   if(!RS)$('#shotbar').style.display='none';
@@ -1237,7 +1501,7 @@ function frame(now){
 
 /* ================= Inicio ================= */
 function boot(){
-  const had=load();S.boxes.forEach(b=>{S.gear[b.key]=Math.max(S.gear[b.key],b.lvl+1);});S.boxes=[];
+  initCull();const had=load();S.boxes.forEach(b=>{S.gear[b.key]=Math.max(S.gear[b.key],b.lvl+1);});S.boxes=[];
   S.leads=S.leads.filter(l=>l.list&&l.loc);S.jobs.forEach(j=>{if(j.stage==='shoot'&&!j.list){const jt=JOBS.find(x=>x.id===j.type)||JOBS[0];j.loc=pick(jt.locs);j.list=makePlan(jt,j.loc);}});if(!S.hot.includes('cam'))S.hot[0]='cam';syncVan();refreshShop();S.edits=(S.edits||[]).filter(o=>o.kind==='job').map(o=>Object.assign(o,{busy:false,done:false}));
   syncWorld();syncBoxes();paintSign();applyTime();
   if(!S.leads.length)genLeads(2);
@@ -1245,7 +1509,7 @@ function boot(){
   if('ontouchstart' in window&&!window.matchMedia('(pointer:fine)').matches)$('#note').textContent='Este juego necesita teclado y mouse: ábrelo desde una computadora.';
   $('#playBtn').onclick=()=>{started=true;$('#start').remove();AC&&AC.resume&&AC.resume();tryLock();if(had)toast('Partida cargada · '+$$(S.cash)+' · día '+S.day);};
   addEventListener('beforeunload',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
-  window.__G={openBJ,openPoker,openSlots,openRoulette,talk,NPCS,evalHand,cmpHand,S:()=>S,P,V,keys,blocked,colliders,customers,stands,get RS(){return RS;},LOCBY,TT,spawnCustomer,greet,collect,custAct,openPhone,phoneRender,startShoot,endShoot,endDay,newDay,addShot,finishEdit,editAct,acceptLead,genLeads,syncWorld,hud,setStarted:v=>{started=v;},toggleOpen,tryLock,buyGear,openInv,selectSlot,heldItem,shotInfo,startDrive,exitVan,driveStep,fastTravel,goRoof,needsOf,makePlan,dest,vanAct_,step:(dt)=>{stepCustomers(dt);stepStaff(dt);stepShoot(dt);},setPhoneTab:t=>{phoneTab=t;phoneRender();},get modal(){return modal;},look,shotQuality,doInteract,scanTarget,place:(x,z,yaw,pitch,y)=>{P.x=x;P.z=z;P.yaw=yaw;P.pitch=pitch;P.y=y||0;camera.position.set(x,1.65+P.y,z);look();camera.updateMatrixWorld(true);scanTarget();},frameDt:(dt)=>{S.min+=dt*MIN_PER_SEC;}};
+  window.__G={stepBall,BB,throwBall,takeBall,HOOPS,startMatch,ballMesh,PED,fireGun,hurtPed,hurtPlayer,openArms,GUN,FR_ALL,MV,CULL,renderer,stepPeds,openBJ,openPoker,openSlots,openRoulette,talk,NPCS,evalHand,cmpHand,S:()=>S,P,V,keys,blocked,colliders,customers,stands,get RS(){return RS;},LOCBY,TT,spawnCustomer,greet,collect,custAct,openPhone,phoneRender,startShoot,endShoot,endDay,newDay,addShot,finishEdit,editAct,acceptLead,genLeads,syncWorld,hud,setStarted:v=>{started=v;},toggleOpen,tryLock,buyGear,openInv,selectSlot,heldItem,shotInfo,startDrive,exitVan,driveStep,fastTravel,goRoof,needsOf,makePlan,dest,vanAct_,step:(dt)=>{stepCustomers(dt);stepStaff(dt);stepShoot(dt);},setPhoneTab:t=>{phoneTab=t;phoneRender();},get modal(){return modal;},look,shotQuality,doInteract,scanTarget,place:(x,z,yaw,pitch,y)=>{P.x=x;P.z=z;P.yaw=yaw;P.pitch=pitch;P.y=y||0;camera.position.set(x,1.65+P.y,z);look();camera.updateMatrixWorld(true);scanTarget();},frameDt:(dt)=>{S.min+=dt*MIN_PER_SEC;}};
   requestAnimationFrame(t=>{last=t;frame(t);});
 }
 boot();
