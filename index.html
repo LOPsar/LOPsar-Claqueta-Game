@@ -23,6 +23,8 @@ a.btn{display:inline-flex;align-items:center;background:var(--panel2);border:1px
 #stats small{font:500 10px var(--mono);color:var(--mut);letter-spacing:.12em;text-transform:uppercase}
 .bar{height:6px;background:#0b0d11;border:1px solid var(--line);border-radius:3px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--amber);width:0}
 #obj{position:absolute;right:14px;top:14px;padding:10px 14px;max-width:290px}
+#objtx{white-space:pre-line}
+.tabs{flex-wrap:wrap}
 #obj b{font:600 11px var(--mono);letter-spacing:.12em;color:var(--amber);text-transform:uppercase;display:block;margin-bottom:3px}
 #cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:rgba(255,255,255,.75);box-shadow:0 0 0 1px rgba(0,0,0,.5)}
 #cross.act{background:var(--amber);width:10px;height:10px;margin:-5px}
@@ -208,7 +210,7 @@ const ACHS=[
 const fresh=()=>({v:1,day:1,min:DAY_START,cash:300,xp:0,rep:0,earned:0,
  gear:{camara:0,lentes:0,luces:1,audio:0,gimbal:0,dron:0,pc:0,fondos:0,decor:0},
  staff:{recep:0,asist:0,editor:0},ads:0,open:false,hot:['cam',null,null,null,null,null,null,null,null],sel:0,trk:null,cas:{net:0,met:{}},arm:{pis:0,rev:0,ammo:0},
- boxes:[],edits:[],leads:[],jobs:[],nid:1,stats:{served:0,lost:0,jobs:0,five:0},ach:{},today:{in:0,out:0,n:0},muted:false});
+ boxes:[],edits:[],leads:[],jobs:[],nid:1,stats:{served:0,lost:0,jobs:0,five:0},ach:{},today:{in:0,out:0,n:0},muted:false,story:0,storyI:-1,br:{}});
 let S=fresh();
 function load(){try{const r=localStorage.getItem(SAVE_KEY);if(!r)return false;const d=JSON.parse(r);if(!d||d.v!==1)return false;const f=fresh();S=Object.assign(f,d);S.gear=Object.assign(f.gear,d.gear);S.staff=Object.assign(f.staff,d.staff);S.stats=Object.assign(f.stats,d.stats);S.today=Object.assign(f.today,d.today);S.hot=(d.hot&&d.hot.length===9)?d.hot:f.hot;S.cas=Object.assign({net:0,met:{}},d.cas||{});S.arm=Object.assign({pis:0,rev:0,ammo:0},d.arm||{});S.open=false;return true;}catch(e){return false;}}
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(Object.assign({},S,{edits:S.edits.filter(o=>o.kind==='job')})));}catch(e){}}
@@ -306,9 +308,9 @@ box(1.5,.3,.7,0x3a3f4a,15.4,0,6,{parent:decorG[2]});plant(decorG[2],15.4,8.2,1.5
 box(1.6,.02,1.6,0xffb347,1.5,0,10.9,{cast:false,mat:new THREE.MeshStandardMaterial({color:0xffb347,transparent:true,opacity:.35})});
 
 /* ---- Exterior ---- */
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(1500,700),M(0x6c9a5a));ground.rotation.x=-Math.PI/2;ground.position.set(230,-.02,40);ground.receiveShadow=true;scene.add(ground);
-box(560,.05,7.5,0x3b3e45,230,0,17.6,{cast:false});box(560,.12,2.4,0xbdbdbd,230,0,13.2,{cast:false});box(560,.12,2.4,0xbdbdbd,230,0,21.6,{cast:false});
-for(let i=-6;i<=134;i++)box(2,.02,.15,0xf2d34b,i*3.5,.06,17.6,{cast:false});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,20),M(0x6c9a5a));ground.visible=false;ground.position.set(0,-9,0);scene.add(ground);
+box(305,.05,7.5,0x3b3e45,102.5,0,17.6,{cast:false});box(305,.12,2.4,0xbdbdbd,102.5,0,13.2,{cast:false});box(305,.12,2.4,0xbdbdbd,102.5,0,21.6,{cast:false});
+for(let i=-6;i<=72;i++)box(2,.02,.15,0xf2d34b,i*3.5,.06,17.6,{cast:false});
 const bTex=(c)=>canvasTex(128,128,(g,w,hh)=>{g.fillStyle=c;g.fillRect(0,0,w,hh);for(let y=0;y<4;y++)for(let x=0;x<4;x++){g.fillStyle=Math.random()<.35?'#ffe29a':'#27384d';g.fillRect(10+x*30,12+y*30,18,18);}});
 [[-6,6,12,0xd9b99b],[3,5,14,0xb3c3d1],[10,7,9,0xe0c88a],[19,6,13,0xc79c8e],[28,7,16,0x9fb7a1],[38,6,10,0xd1c1a5],[-16,8,12,0xb9a7c9]].forEach(([x,w,hh,c])=>{const t=bTex('#'+c.toString(16).padStart(6,'0'));t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(w/4,hh/4);const m=new THREE.Mesh(new THREE.BoxGeometry(w,hh,6),new THREE.MeshStandardMaterial({map:t,roughness:.9}));m.position.set(x,hh/2,28);m.castShadow=true;m.receiveShadow=true;scene.add(m);colliders.push([x-w/2,25,x+w/2,31]);});
 for(let i=0;i<9;i++){const x=-12+i*7.5;cyl(.15,2.2,0x5a3e28,x,0,22.9);ball(1.1,0x3f8a4c,x,3,22.9);}
@@ -434,10 +436,9 @@ function palm(x,z,s){s=s||1;const t=cyl(.16*s,3.4*s,0x8a6a42,x,0,z);t.rotation.z
  box(26.4,.4,18.4,0x8d8f94,bx,16,bz,{cast:false});box(26.4,1,.4,0x72757b,bx,16.4,bz-9,{});box(26.4,1,.4,0x72757b,bx,16.4,bz+9,{});box(.4,1,18,0x72757b,bx-13,16.4,bz,{});box(.4,1,18,0x72757b,bx+13,16.4,bz,{});
  box(2,1.2,2,0xb5b5b5,bx-4,16.4,bz+3,{});box(1,2.4,1,0xa0a0a0,bx+6,16.4,bz-5,{});cyl(.9,1.6,0x6a7a8a,bx+9,16.4,bz+6,{});box(2.2,2.4,2,0x555,bx-11,16.4,bz,{});
  box(2,2.7,.2,0x1d7a4d,bx,0,bz-8.95,{mat:new THREE.MeshStandardMaterial({color:0x1d7a4d,emissive:0x1d7a4d,emissiveIntensity:.4}),cast:false});
- [[-28,60,14,'#a8b5a0'],[-10,80,12,'#d0b79b'],[20,100,16,'#8f9bb0'],[50,70,13,'#b7c4d1'],[90,110,18,'#a8b5a0'],[140,90,14,'#d0b79b'],[30,-60,20,'#8f9bb0'],[100,-70,16,'#b7c4d1'],[180,-50,22,'#a8b5a0']].forEach(([dx,dz,w,c])=>tower(bx+dx*1.2,bz+dz,w,18+Math.abs(dx)%30,c));}
+}
 /* Playa */
 {const [bx,bz]=LOCBY.playa.c;const sand=new THREE.Mesh(new THREE.PlaneGeometry(76,58),M(0xe3cf9b));sand.rotation.x=-Math.PI/2;sand.position.set(bx,.01,bz+3);sand.receiveShadow=true;scene.add(sand);
- const sea=new THREE.Mesh(new THREE.PlaneGeometry(260,80),new THREE.MeshStandardMaterial({color:0x2e8fbf,roughness:.2,metalness:.2}));sea.rotation.x=-Math.PI/2;sea.position.set(bx,.03,bz+70);scene.add(sea);
  box(2.6,.3,26,0x8a6a42,447,.7,69,{});for(let i=0;i<7;i++)box(.2,.8,.2,0x5a3e28,445.8,0,58+i*3.6,{});
  [[414,40,1.3],[408,48,1.1],[418,34,1],[452,36,1.2],[400,36,1],[440,30,1]].forEach(([x,z,s])=>palm(x,z,s));
  box(3.4,.5,1.2,0xd0452f,438,0,46,{});box(.1,2.4,.1,0xddd,438,0,48);for(let k=0;k<3;k++)box(.04,.6,.9,0xff6b9a,438.5+k*.4,2+k*.3,48);}
@@ -515,7 +516,7 @@ function openModal(kind,node,wide){closeModal(true);try{document.exitPointerLock
 function closeModal(silent){if(!modal)return;modal.ov.remove();modal=null;if(!silent)tryLock();}
 
 /* ---- colisiones ---- */
-function blocked(x,z,r){r=r||.3;if(P.y>0&&!V.drive)return false;for(const c of colliders){if(x>c[0]-r&&x<c[2]+r&&z>c[1]-r&&z<c[3]+r)return true;}return false;}
+function blocked(x,z,r){r=r||.3;if(P.y>0&&!V.drive)return false;if(x>300&&z>88&&waterAt(x,z))return true;for(const c of colliders){if(x>c[0]-r&&x<c[2]+r&&z>c[1]-r&&z<c[3]+r)return true;}return false;}
 const MV={vx:0,vz:0,vy:0,jy:0,air:false,boost:1,gt:0,hops:0};
 function movePlayer(dt){
   if(modal||paused||!started)return;
@@ -830,7 +831,7 @@ function openTravel(){
 function fastTravel(r,cost,mins){fadeTo(()=>{spend(cost);S.min+=mins;V.x=r.x;V.z=r.z;V.h=Math.PI/2;V.v=0;syncVan();
   if(V.drive){P.yaw=V.h+Math.PI;P.pitch=0;}else{if(r.id==='studio'){P.x=6.4;P.z=14.8;}else{const l=LOCBY[r.id];P.x=l.mk[0]-2.6;P.z=23.2;}P.y=0;P.yaw=Math.PI;P.pitch=0;}
   toast('Llegaste a '+r.n+'.');});}
-function syncVan(){van.position.set(V.x,0,V.z);van.rotation.y=V.h;vp.position.set(V.x,1.2,V.z);vp.rotation.y=V.h;}
+function syncVan(){const sn=Math.sin(V.h),cs=Math.cos(V.h),y0=getH(V.x,V.z),yf=getH(V.x+sn*2.3,V.z+cs*2.3),yb=getH(V.x-sn*2.3,V.z-cs*2.3);V.y=y0;van.position.set(V.x,y0,V.z);van.rotation.order='YXZ';van.rotation.y=V.h;van.rotation.x=-Math.atan2(yf-yb,4.6);vp.position.set(V.x,y0+1.2,V.z);vp.rotation.y=V.h;}
 /* cabina: se ve desde dentro (la furgoneta es hueca por dentro, el cuerpo no se dibuja hacia adentro) */
 const wheelG=new THREE.Group();wheelG.position.set(.45,1.62,1.08);wheelG.rotation.x=-.55;van.add(wheelG);
 {const tor=new THREE.Mesh(new THREE.TorusGeometry(.2,.028,8,24),new THREE.MeshStandardMaterial({color:0x15161a,roughness:.6}));wheelG.add(tor);
@@ -855,8 +856,8 @@ function driveStep(dt){
   if(Math.abs(V.v)>.2){const dh=st*1.7*dt*clamp(V.v/5,-1,1);V.h+=dh;}
   wheelG.rotation.z+=((st*-.9)-wheelG.rotation.z)*Math.min(1,dt*8);
   const sn=Math.sin(V.h),cs=Math.cos(V.h);let nx=V.x+sn*V.v*dt,nz=V.z+cs*V.v*dt;
-  const hit=blocked(nx+sn*2.3,nz+cs*2.3,1.1)||blocked(nx-sn*2.3,nz-cs*2.3,1.1)||blocked(nx,nz,1.1);
-  if(hit){V.v=-V.v*.25;}else{V.x=clamp(nx,-25,495);V.z=clamp(nz,-3,92);}
+  const hit=waterAt(nx+sn*2.3,nz+cs*2.3)||blocked(nx+sn*2.3,nz+cs*2.3,1.1)||blocked(nx-sn*2.3,nz-cs*2.3,1.1)||blocked(nx,nz,1.1);
+  if(hit){V.v=-V.v*.25;}else{V.x=clamp(nx,-320,700);V.z=clamp(nz,-320,430);}
   syncVan();P.yaw=V.h+Math.PI+off;P.pitch=clamp(P.pitch,-.6,.5);
 }
 /* ================= Tienda física ================= */
@@ -1116,7 +1117,7 @@ function initCull(){
   scene.children.forEach(o=>{
     if(o.isLight){if(o.isPointLight){CULL.lights.push({l:o,on:true,x:o.position.x,z:o.position.z});}return;}
     if(o===camera||o===BEACON||o===ground)return;
-    if(!(o.position.x>40.5||o.position.z>24))return;
+    if(!(o.position.x>40.5||o.position.z>24||o.position.x<-16.5||o.position.z<-1))return;
     let r=0;if(o.isMesh){const g=o.geometry;if(!g.boundingSphere)g.computeBoundingSphere();r=g.boundingSphere.radius*Math.max(o.scale.x,o.scale.y,o.scale.z);if(r>45)return;}
     if(o.userData.act)return;           /* NPC y proxys interactivos se manejan solos */
     o.updateMatrix();o.matrixAutoUpdate=false;CULL.list.push({o,r,x:o.position.x,z:o.position.z});
@@ -1387,7 +1388,7 @@ plane(3.6,.9,canvasTex(512,128,(g,w,hh)=>{g.fillStyle='#120a08';g.fillRect(0,0,w
 [[98,3,6],[107,3,6]].forEach(([x,y,z],i)=>{const l=new THREE.PointLight(i?0xffb080:0x9affea,.8,13,1.5);l.position.set(x,y,z);scene.add(l);});
 box(9,1.1,.8,0x3a2415,103,0,1.8,{col:true});box(9.2,.06,1,0xd9b27a,103,1.1,1.8,{});
 for(let i=0;i<9;i++)box(.18,.45,.18,[0x2f8a4a,0xb0252d,0xc9a227,0x3f6ec9,0x8a5a2c,0x9a3fc9][i%6],99+i*1,1.6,.25,{cast:false});box(9,.05,.4,0x5a3a22,103,1.4,.3,{});
-for(let i=0;i<6;i++)cyl(.22,.6,0x222,99.2+i*1.2,0,3.0);
+for(let i=0;i<6;i++)cyl(.22,.6,0x222222,99.2+i*1.2,0,3.0);
 [[98,7],[103,8],[108,7]].forEach(([x,z])=>{cyl(.6,.75,0x6a4a2a,x,0,z,{col:true});[[1,0],[-1,0],[0,1],[0,-1]].forEach(([a,b])=>cyl(.2,.45,0x8a3a2a,x+a*.95,0,z+b*.95));});
 box(.9,1.7,.55,0x6a2a8a,110.5,0,1.0,{col:true,mat:new THREE.MeshStandardMaterial({color:0x6a2a8a,emissive:0x8a3acf,emissiveIntensity:.5})});
 proxy(1.4,2,1.4,110.3,0,2.0,{label:()=>'Jukebox',fn:()=>{const s=pick(['«Pura Vida Blues»','«Claqueta en Re mayor»','«Luces de la ciudad»','«Cafecito de la mañana»','«El tico enamorado (remix)»','«Presa en la Interamericana»']);toast('🎵 Suena '+s,2600);beep(660,.1,'triangle',.05);setTimeout(()=>beep(880,.12,'triangle',.05),120);}});
@@ -1459,9 +1460,473 @@ function tierLook(){
   handItems.gim.children[1].material.color.setHex([0x2a2d33,0x3a6ea8,0xd4af37][Math.min(G_('gimbal'),2)]);
   handItems.mic.children[2].scale.setScalar(1+.35*G_('audio'));handItems.mic.children[2].material.color.setHex([0x888888,0xaaaaaa,0xd4af37,0xe0e4ea][Math.min(G_('audio'),3)]);
 }
+
+/* ================= Mundo grande: terreno con relieve y carreteras ================= */
+const sm01=(a,b,x)=>{x=clamp((x-a)/(b-a),0,1);return x*x*(3-2*x);};
+const hash2=(i,j)=>{const n=Math.sin(i*127.1+j*311.7)*43758.5453;return n-Math.floor(n);};
+function vnoise(x,z){const i=Math.floor(x),j=Math.floor(z),fx=x-i,fz=z-j,u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);const a=hash2(i,j),b=hash2(i+1,j),c=hash2(i,j+1),d=hash2(i+1,j+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;}
+const fbm=(x,z)=>.55*vnoise(x/95,z/95)+.3*vnoise(x/42+7,z/42+3)+.15*vnoise(x/19+11,z/19+5);
+/* zonas planas (pads): avenida central, playa y distritos */
+const DIST=[
+ {id:'colinas',n:'Colinas del Sol',c:[150,-130],col:0xf0c987},
+ {id:'campus',n:'Campus San Isidro',c:[40,-135],col:0x9fc5e8},
+ {id:'feria',n:'Feria Luna Park',c:[290,-140],col:0xff9ec7},
+ {id:'industrial',n:'Polígono Industrial',c:[310,150],col:0xb0b4ba},
+ {id:'aerodromo',n:'Aeródromo Cielo Abierto',c:[-190,30],col:0xd8e4f0},
+ {id:'campo',n:'Valle Verde',c:[-150,150],col:0x9ccc7a},
+ {id:'pueblo',n:'Pueblo Antiguo',c:[60,170],col:0xe6b98a},
+ {id:'puerto',n:'Puerto Pesquero',c:[480,205],col:0x7fc4d8},
+ {id:'mirador',n:'Cerro Mirador',c:[430,-155],col:0xd9a0e0},
+ {id:'reserva',n:'Reserva del Lago',c:[-60,-195],col:0x6fbf8f}
+];
+const PADS=[{seg:[-25,17,255,17],r:56},{c:[430,53],r:48}].concat(DIST.map(d=>({c:d.c,r:60})));
+function padW(x,z){let m=0;for(const p of PADS){let d;if(p.seg){const [ax,az,bx,bz]=p.seg,dx=bx-ax,dz=bz-az,t=clamp(((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz),0,1);d=Math.hypot(x-ax-dx*t,z-az-dz*t);}else d=Math.hypot(x-p.c[0],z-p.c[1]);
+  const w=1-sm01(0,34,d-p.r);if(w>m)m=w;if(m>=1)return 1;}return m;}
+/* carreteras: puntos de control → curvas con elevación */
+const RD_DEF=[
+ ['playa',[255,17.6],[430,20],10,[[340,44]]],
+ ['norte1',[180,10],[150,-130],10,[[200,-55],[135,-85]]],
+ ['norte2',[240,10],[290,-140],12,[[255,-50],[300,-90]]],
+ ['colcam',[150,-130],[40,-135],8,[[95,-165]]],
+ ['colfer',[150,-130],[290,-140],11,[[220,-110]]],
+ ['ferMir',[290,-140],[430,-155],14,[[360,-185]]],
+ ['mirPl',[430,-155],[430,20],12,[[470,-80],[400,-40]]],
+ ['camRes',[40,-135],[-60,-195],9,[[-10,-175]]],
+ ['jwCam',[-50,17.6],[40,-135],8,[[-20,-60],[-30,-110]]],
+ ['jwAer',[-50,17.6],[-190,30],7,[[-120,55]]],
+ ['aerCam',[-190,30],[-150,150],9,[[-210,95]]],
+ ['sPue',[202,24],[60,170],9,[[190,95],[110,150]]],
+ ['camPue',[-150,150],[60,170],8,[[-50,195],[0,130]]],
+ ['sInd',[202,24],[310,150],8,[[250,70],[285,115]]],
+ ['indPto',[310,150],[480,205],3,[[390,150],[440,190]]]
+];
+const ROADS=[];
+function buildRoads(){
+  RD_DEF.forEach(([id,a,b,H,mid],ri)=>{
+    const ctrl=[a].concat(mid,[b]);
+    /* extremos fantasma para Catmull-Rom */
+    const P0=[2*ctrl[0][0]-ctrl[1][0],2*ctrl[0][1]-ctrl[1][1]],Pn=[2*ctrl[ctrl.length-1][0]-ctrl[ctrl.length-2][0],2*ctrl[ctrl.length-1][1]-ctrl[ctrl.length-2][1]];
+    const cp=[P0].concat(ctrl,[Pn]),pts=[];
+    for(let i=1;i<cp.length-2;i++){const p0=cp[i-1],p1=cp[i],p2=cp[i+1],p3=cp[i+2];const n=Math.max(4,Math.round(Math.hypot(p2[0]-p1[0],p2[1]-p1[1])/6));
+      for(let k=0;k<n;k++){const t=k/n,t2=t*t,t3=t2*t;const f=(a0,a1,a2,a3)=>.5*((2*a1)+(-a0+a2)*t+(2*a0-5*a1+4*a2-a3)*t2+(-a0+3*a1-3*a2+a3)*t3);pts.push({x:f(p0[0],p1[0],p2[0],p3[0]),z:f(p0[1],p1[1],p2[1],p3[1])});}}
+    pts.push({x:b[0],z:b[1]});
+    let s=0;pts[0].s=0;for(let i=1;i<pts.length;i++){s+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].z-pts[i-1].z);pts[i].s=s;}
+    const len=s,ph=ri*1.7;
+    pts.forEach(p=>{p.e=H*sm01(40,125,p.s)*sm01(40,125,len-p.s)*(.72+.28*Math.sin(p.s/48+ph));});
+    let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;pts.forEach(p=>{x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);z0=Math.min(z0,p.z);z1=Math.max(z1,p.z);});
+    ROADS.push({id,pts,len,box:[x0-160,z0-160,x1+160,z1+160]});
+  });
+}
+buildRoads();
+function roadNear(x,z){let best=1e9,e=0;
+  for(const R of ROADS){const b=R.box;if(x<b[0]||x>b[2]||z<b[1]||z>b[3])continue;const p=R.pts;
+    for(let i=0;i<p.length-1;i++){const A=p[i],B=p[i+1],dx=B.x-A.x,dz=B.z-A.z,l2=dx*dx+dz*dz;let t=l2?((x-A.x)*dx+(z-A.z)*dz)/l2:0;t=t<0?0:t>1?1:t;const px=A.x+dx*t,pz=A.z+dz*t,d=Math.hypot(x-px,z-pz);if(d<best){best=d;e=A.e+(B.e-A.e)*t;}}}
+  return [best,e];}
+function getH(x,z){
+  const pw=padW(x,z);const sea=sm01(320,380,x)*sm01(88,112,z);
+  if(pw>=1)return 0;
+  const [dR,e]=roadNear(x,z);
+  const dC=Math.hypot(x-300,z-30);
+  const amp=5+30*sm01(14,150,dR)+46*sm01(260,520,dC);
+  let h=Math.pow(fbm(x,z),1.4)*amp*1.5;
+  const rw=1-sm01(5,26,dR);h=h+(e-h)*rw;
+  h=h+(-5-h)*sea;
+  return h*(1-pw);
+}
+/* malla del terreno */
+const TGR={x0:-340,z0:-340,x1:720,z1:440,st:6};
+{const nx=Math.round((TGR.x1-TGR.x0)/TGR.st)+1,nz=Math.round((TGR.z1-TGR.z0)/TGR.st)+1;
+ const pos=new Float32Array(nx*nz*3),col=new Float32Array(nx*nz*3),idx=[];
+ const cg=new THREE.Color(0x5f9b4e),cg2=new THREE.Color(0x7bb25c),cr=new THREE.Color(0x8b8780),cs=new THREE.Color(0xe3cf9b),cd=new THREE.Color(0x4f8a45),tmp=new THREE.Color();
+ for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){const x=TGR.x0+i*TGR.st,z=TGR.z0+j*TGR.st,h=getH(x,z),k=(j*nx+i)*3;pos[k]=x;pos[k+1]=h;pos[k+2]=z;
+  const n=vnoise(x/23+3,z/23);tmp.copy(cg).lerp(cg2,n).lerp(cd,vnoise(x/70,z/70)*.5);
+  tmp.lerp(cr,sm01(20,36,h));if(h<1.2&&x>320&&z>84)tmp.lerp(cs,.9);if(h<-.1)tmp.lerp(cs,.8);
+  col[k]=tmp.r;col[k+1]=tmp.g;col[k+2]=tmp.b;}
+ for(let j=0;j<nz-1;j++)for(let i=0;i<nx-1;i++){const a=j*nx+i,b=a+1,c=a+nx,d=c+1;idx.push(a,c,b,b,c,d);}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();
+ const terr=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1}));terr.position.y=-.05;terr.receiveShadow=true;scene.add(terr);window.__terr=terr;
+ const sea=new THREE.Mesh(new THREE.PlaneGeometry(1100,720),new THREE.MeshStandardMaterial({color:0x2e8fbf,roughness:.25,metalness:.2}));sea.rotation.x=-Math.PI/2;sea.position.set(850,-.3,400);scene.add(sea);
+ /* franjas de carretera */
+ const rp=[],rl=[],ri=[],li=[];let vc=0,vl=0;
+ ROADS.forEach(R=>{const p=R.pts;for(let i=0;i<p.length;i++){const A=p[Math.max(0,i-1)],B=p[Math.min(p.length-1,i+1)];let dx=B.x-A.x,dz=B.z-A.z;const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;const nxx=-dz,nzz=dx,y=p[i].e+.09;
+   rp.push(p[i].x+nxx*4.6,y,p[i].z+nzz*4.6,p[i].x-nxx*4.6,y,p[i].z-nzz*4.6);rl.push(p[i].x+nxx*.14,y+.05,p[i].z+nzz*.14,p[i].x-nxx*.14,y+.05,p[i].z-nzz*.14);
+   if(i<p.length-1){const a=vc+i*2;ri.push(a,a+2,a+1,a+1,a+2,a+3);}}
+   vc+=p.length*2;});
+ /* para la línea central, mismos índices */
+ const mk=(arr,mat)=>{const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(arr),3));gg.setIndex(ri);gg.computeVertexNormals();const m=new THREE.Mesh(gg,mat);m.frustumCulled=false;m.receiveShadow=true;scene.add(m);return m;};
+ mk(rp,new THREE.MeshStandardMaterial({color:0x3b3e45,roughness:.95,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+ mk(rl,new THREE.MeshStandardMaterial({color:0xf2d34b,roughness:.9,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+}
+/* árboles y rocas instanciados */
+{const N=2600,trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.18,.25,1.6,5),new THREE.MeshStandardMaterial({color:0x5a3e28}),N),crown=new THREE.InstancedMesh(new THREE.ConeGeometry(1.5,4.4,6),new THREE.MeshStandardMaterial({color:0x2f7a3c,roughness:1}),N);
+ const mtx=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),ps=new THREE.Vector3();let n=0,tries=0;const col=new THREE.Color();
+ while(n<N&&tries<40000){tries++;const x=rnd(-330,700),z=rnd(-330,430);if(padW(x,z)>.05)continue;const [dR]=roadNear(x,z);if(dR<9)continue;const h=getH(x,z);if(h<.6||h>26)continue;
+  const s=rnd(.7,1.7);ps.set(x,h-.05+.8*s,z);sc.set(s,s,s);mtx.compose(ps,q,sc);trunk.setMatrixAt(n,mtx);ps.set(x,h-.05+3.1*s,z);mtx.compose(ps,q,sc);crown.setMatrixAt(n,mtx);col.setHSL(.3+rnd(-.03,.03),.5,rnd(.2,.32));crown.setColorAt(n,col);n++;}
+ trunk.count=crown.count=n;scene.add(trunk);scene.add(crown);trunk.frustumCulled=false;crown.frustumCulled=false;}
+/* altura bajo el jugador y la furgoneta */
+const TY={p:0};
+function terrainAt(x,z){return getH(x,z);}
+function waterAt(x,z){return x>300&&z>88&&getH(x,z)<-.4;}
+bounds=[-330,-330,710,430];
+
+/* ================= Distritos, ~100 lugares y misiones ================= */
+const PLACE_TYPES={};
+function mkPl(x,z,f){return {x,z,f,r:[f[1],-f[0]]};}
+function WP(pl,lx,lz){return [pl.x+lx*pl.r[0]+lz*pl.f[0],pl.z+lx*pl.r[1]+lz*pl.f[1]];}
+function pb(pl,lx,lz,w,h,d,c,y,col,o){const [x,z]=WP(pl,lx,lz),sw=Math.abs(pl.f[0])>.5;return box(sw?d:w,h,sw?w:d,c,x,y||0,z,Object.assign({col:!!col},o||{}));}
+function pc(pl,lx,lz,r,h,c,y,col,o){const [x,z]=WP(pl,lx,lz);return cyl(r,h,c,x,y||0,z,Object.assign({col:!!col},o||{}));}
+function pbl(pl,lx,lz,r,c,y){const [x,z]=WP(pl,lx,lz);return ball(r,c,x,y,z);}
+function ptree(pl,lx,lz,s){const [x,z]=WP(pl,lx,lz);tree(x,z,s||1);}
+function psign(pl,lx,lz,y,w,txt,bg,fg){const [x,z]=WP(pl,lx,lz);return plane(w,w*.28,canvasTex(512,144,(g,W,H)=>{g.fillStyle=bg||'#1d2330';g.fillRect(0,0,W,H);g.strokeStyle=fg||'#ffd08a';g.lineWidth=6;g.strokeRect(6,6,W-12,H-12);g.fillStyle=fg||'#ffd08a';g.font='bold 54px sans-serif';g.textAlign='center';g.fillText(txt,W/2,H/2+19,W-30);}),x,y,z,Math.atan2(pl.f[0],pl.f[1]),true);}
+function shell(pl,w,d,h,c,rc,win){pb(pl,0,-1-d/2,w,h,d,c,0,true);pb(pl,0,-1-d/2,w+.6,.4,d+.6,rc,h);pb(pl,0,-.9,1.6,2.3,.12,0x3a2a1e,0);if(win!==0)[-w/3,w/3].forEach(k=>pb(pl,k,-.92,1.8,1.3,.1,0x8fc3e8,1.1,false,{cast:false}));}
+const P_=(nm,lx,lz,y,per)=>[nm,lx,lz,y,per];
+/* tipos: n = nombres · b = constructor · s = 5 sujetos · m = misiones [título, cliente, tipo de encargo] */
+PLACE_TYPES.casa={n:['Casa Los Almendros','Casa Brisas del Cerro','Casa La Ceiba','Casa Monteverde','Casa Santa Elena'],c:0xe6d2b5,
+ b:pl=>{shell(pl,10,7,4,0xe6d2b5,0xa0522d);pb(pl,6.2,-4.5,3.6,2.6,4.5,0xcfc6b8,0,true);ptree(pl,-6,2,1);pb(pl,0,6,1.6,.02,6,0xbdbdbd,0,false,{cast:false});},
+ s:[P_('la familia en la puerta',0,2.5,1.45,1),P_('la fachada',0,-1,2,0),P_('el jardín',-4,3.5,.8,0),P_('el niño con el balón',3.5,4,1.45,1),P_('el árbol del patio',-6,2,2.4,0)],
+ m:[['Video inmobiliario de la casa','Inmobiliaria Verde','inmob'],['Cumpleaños en el jardín','Familia Quesada','reel'],['Mudanza: antes y después','Mudanzas Pura Vida','comercial']]};
+PLACE_TYPES.mansion={n:['Mansión Villa Aurora','Mansión El Mirador','Residencia Altos del Sol','Villa Esmeralda'],c:0xf2efe8,
+ b:pl=>{shell(pl,14,9,6,0xf2efe8,0x4a4f5a);pb(pl,-8,2,7,.3,5,0x66c3e6,0,false,{cast:false});pb(pl,-8,2,7.4,.15,5.4,0xdfe6ea,0,false,{cast:false});pc(pl,5,1,.5,2.2,0xf2efe8,0,true);pc(pl,-5,-1,.5,2.2,0xf2efe8,0,true);ptree(pl,8,4,1.2);},
+ s:[P_('el dueño en la entrada',2,2.5,1.45,1),P_('la piscina',-8,2,.6,0),P_('la fachada',0,-1,3,0),P_('la modelo junto a la piscina',-5,4.5,1.45,1),P_('las columnas',5,1,2,0)],
+ m:[['Tour inmobiliario de lujo','Inmobiliaria Verde','inmob'],['Videoclip junto a la piscina','Banda Los Faroles','clip'],['Campaña de bienes raíces premium','Agencia Meridiano','campana']]};
+PLACE_TYPES.hotel={n:['Hotel Mirador','Hotel Brisa Azul','Hotel Cerro Verde','Gran Hotel Alba'],c:0xd9b99b,
+ b:pl=>{pb(pl,0,-6,16,8,10,0xd9b99b,0,true);pb(pl,0,-6,16.6,.4,10.6,0x8a5a44,8);for(let i=-3;i<=3;i++)pb(pl,i*2,-1.02,1.2,1.2,.1,0x8fc3e8,1.5+(i%2?3:0),false,{cast:false});pb(pl,0,-.9,3,2.6,.12,0x3a2a1e,0);psign(pl,0,-.9,5.4,6,'HOTEL','#2a1d12','#ffd08a');pb(pl,5,2.5,3,.7,1,0xb0252d,0,true);},
+ s:[P_('la recepcionista',0,2,1.45,1),P_('el lobby',0,-.5,1.6,0),P_('el botones con maletas',-3,3.5,1.45,1),P_('la habitación de muestra',3,-1,3.5,0),P_('el cartel del hotel',0,-.8,5.4,0)],
+ m:[['Video corporativo del hotel','Hotel Mirador','corp'],['Reel de la suite nupcial','Hotel Brisa Azul','boda'],['Comercial de temporada alta','Cámara de Turismo','comercial']]};
+PLACE_TYPES.mirador={n:['Mirador del Valle','Mirador La Cumbre','Mirador Los Volcanes','Mirador El Águila'],c:0x9a7a4a,
+ b:pl=>{pb(pl,0,-2,12,.6,6,0x9a7a4a,0,true);[-6,6].forEach(k=>pb(pl,k,-2,.2,1.1,6,0x6a4a2a,.6));pb(pl,0,-5,12,1.1,.2,0x6a4a2a,.6);pc(pl,3,-2,.12,1.6,0x444444,.6);pb(pl,3,-2,.5,.3,.9,0x2a2d33,2.1);pb(pl,-3,-1,1.6,.4,.5,0x7a5230,.6);},
+ s:[P_('la pareja en la baranda',0,-3.5,1.6,1),P_('el telescopio',3,-2,2.2,0),P_('el paisaje al fondo',0,-6,3,0),P_('el fotógrafo turista',-4,0,1.6,1),P_('el banco del mirador',-3,-1,1,0)],
+ m:[['Documental corto: el valle desde arriba','Cámara de Turismo','doc'],['Reel de propuesta de matrimonio','Andrés y Camila','boda'],['Comercial de excursiones','Aventuras del Cerro','comercial']]};
+PLACE_TYPES.restaurante={n:['Restaurante Brasa','Soda La Tradición','Restaurante El Fogón','Cocina de Doña Maru','Bistró Las Palmas'],c:0xc79c8e,
+ b:pl=>{shell(pl,11,7,4,0xc79c8e,0x5a3a2a);pb(pl,0,2,10,.15,4,0x7a5230,.0,false,{cast:false});[[-3,3],[0,3.5],[3,3]].forEach(([a,b])=>{pc(pl,a,b,.55,.75,0x6a4a2a,0,true);});pb(pl,-6,-.5,1,.5,1,0x8a3a2a,0);psign(pl,0,-.9,3.6,4.4,'COCINA','#3a1a12','#ffe29a');},
+ s:[P_('el chef en la cocina',0,-1.5,1.55,1),P_('la mesa servida',0,3.5,1,0),P_('la mesera',-2,2,1.45,1),P_('la barra',-4,0,1.2,0),P_('la pareja cenando',3,2.5,1.45,1)],
+ m:[['Comercial gastronómico','Restaurante Brasa','comercial'],['Reel del menú del día','Soda Doña Lela','reel'],['Documental: la receta de la abuela','Cadena Sabor Tico','doc']]};
+PLACE_TYPES.gimnasio={n:['Gimnasio Pura Vida','Gimnasio Titán','Estudio de Cross Fuerza','Gimnasio Impulso'],c:0x7a8aa0,
+ b:pl=>{shell(pl,12,8,4,0x7a8aa0,0x2a2d33);pb(pl,-3,2,1.2,.1,3,0x222222,0);[-3,0,3].forEach(k=>{pb(pl,k,2.5,1,.5,2,0x333a44,0,true);pb(pl,k,2.5,.2,1.1,1.6,0xc0392b,.5);});pc(pl,5,2,.25,1.5,0xd0452f,0,true);},
+ s:[P_('el entrenador',0,4.5,1.45,1),P_('las pesas',0,2.5,1,0),P_('la atleta en la cinta',-3.5,3,1.45,1),P_('el espejo',-5,0,1.6,0),P_('el saco de boxeo',5,2,1.2,0)],
+ m:[['Comercial de membresías','Gimnasio Pura Vida','comercial'],['Reel de transformación','Gimnasio Titán','reel'],['Videoclip de entrenamiento','Cross Fuerza','clip']]};
+PLACE_TYPES.facultad={n:['Facultad de Artes','Facultad de Comunicación','Escuela de Ingeniería','Facultad de Ciencias'],c:0xb3c3d1,
+ b:pl=>{shell(pl,13,7,6,0xb3c3d1,0x555a66,0);for(let i=-2;i<=2;i++)pc(pl,i*2.4,.2,.35,4.5,0xe8e8e8,0,true);pb(pl,0,-.7,13,.5,2,0xcfcfcf,4.5);pb(pl,0,2.5,5,.1,2.5,0xbdbdbd,0,false,{cast:false});pb(pl,-6,3,2.4,.5,.6,0x7a5230,0);},
+ s:[P_('el estudiante con libros',-1,3.5,1.45,1),P_('la profesora',2,2.5,1.45,1),P_('las columnas',0,.2,2.5,0),P_('el banco del campus',-6,3,.9,0),P_('la entrada principal',0,-.9,1.5,0)],
+ m:[['Video institucional de admisión','Academia Sol y Luna','corp'],['Documental: un día en la facultad','Colegio San Gabriel','doc'],['Reel de graduación','Colegio San Gabriel','reel']]};
+PLACE_TYPES.biblioteca={n:['Biblioteca Central','Biblioteca Jaime Gutiérrez','Mediateca del Campus','Biblioteca Nacional'],c:0xc9b79a,
+ b:pl=>{shell(pl,11,7,4,0xc9b79a,0x6a4a2a);for(let k=-1;k<=1;k++)pb(pl,k*3,-3,.6,3,4,0x5a3a22,0,true);[[-2,2],[2,2.5]].forEach(([a,b])=>{pb(pl,a,b,2.2,.1,1.2,0x7a5230,.75);pb(pl,a,b,2.2,.75,.1,0x5a3a22,0);});},
+ s:[P_('la bibliotecaria',0,1.5,1.45,1),P_('los estantes de libros',0,-.8,1.8,0),P_('el lector en la mesa',-2,2,1.35,1),P_('la mesa de estudio',2,2.5,.9,0),P_('la entrada',0,-.9,1.5,0)],
+ m:[['Documental sobre la lectura','Biblioteca Central','doc'],['Spot de campaña de préstamos','Municipalidad','comercial'],['Reel de feria del libro','Editorial Meridiano','reel']]};
+PLACE_TYPES.estadio={n:['Estadio Municipal','Cancha del Campus','Estadio Los Pinos','Polideportivo Central'],c:0x4f9a6a,
+ b:pl=>{pb(pl,0,2,22,.05,16,0x4f9a6a,0,false,{cast:false});{const [x,z]=WP(pl,0,2),sw=Math.abs(pl.f[0])>.5;const pp=plane(sw?16:22,sw?22:16,canvasTex(220,160,(g,w,hh)=>{g.clearRect(0,0,w,hh);g.strokeStyle='#fff';g.lineWidth=3;g.strokeRect(5,5,w-10,hh-10);g.beginPath();g.moveTo(w/2,5);g.lineTo(w/2,hh-5);g.stroke();g.beginPath();g.arc(w/2,hh/2,22,0,7);g.stroke();}),x,.1,z,sw?Math.PI/2:0,false);pp.rotation.x=-Math.PI/2;pp.rotation.y=0;pp.rotation.z=sw?-Math.PI/2:0;}
+  [-10.5,10.5].forEach(k=>{pb(pl,k,2,.15,2.2,3,0xeeeeee,0);pb(pl,k,2,.15,.15,3,0xeeeeee,2.2);});pb(pl,0,-9,22,3,3,0x9a9ea5,0,true);pb(pl,0,-7.2,22,.4,1.2,0xb0252d,3);},
+ s:[P_('el delantero con el balón',-3,2,1.45,1),P_('la portería',10.5,2,1.2,0),P_('la tribuna',0,-8,2.5,0),P_('el árbitro',2,4,1.45,1),P_('el círculo central',0,2,.4,0)],
+ m:[['Reel del partido de la liga','Liga Comunal','reel'],['Documental del equipo local','Club Deportivo Los Pinos','doc'],['Comercial de equipo deportivo','Tienda Mar y Monte','comercial']]};
+PLACE_TYPES.teatro={n:['Teatro Municipal','Teatro Sol Naciente','Auditorio del Campus','Teatro La Claqueta'],c:0x8a3a4a,
+ b:pl=>{shell(pl,13,8,5,0x8a3a4a,0x2a1218,0);pb(pl,0,-.9,4,3,.12,0xffd08a,0);psign(pl,0,-.9,4.2,7,'TEATRO','#12080a','#ffd08a');pb(pl,-5,3,2,.4,2,0xd9a441,0);pb(pl,5,3,2,.4,2,0xd9a441,0);pc(pl,-5,3,.5,1.6,0xe8e8e8,0.4,true);},
+ s:[P_('la actriz en la entrada',0,2.5,1.45,1),P_('el cartel del estreno',0,-.9,4.2,0),P_('la taquilla',-5,3,1.3,0),P_('el director',3,3.5,1.45,1),P_('la alfombra roja',0,1.5,.1,0)],
+ m:[['Videoclip en el escenario','Banda Los Faroles','clip'],['Obra de teatro: registro completo','Teatro Municipal','doc'],['Spot de la temporada','Teatro Sol Naciente','comercial']]};
+PLACE_TYPES.plaza={n:['Plaza Cívica','Plaza de la Iglesia','Plaza del Quiosco','Plaza de los Fundadores','Parque Infantil'],c:0xbfc4cc,
+ b:pl=>{pb(pl,0,2,14,.05,12,0xcfc8b8,0,false,{cast:false});const [fx,fz]=WP(pl,0,2);fountain(fx,fz);[[-5,2],[5,2]].forEach(([a,b])=>{const [x,z]=WP(pl,a,b);bench(x,z,Math.atan2(pl.f[0],pl.f[1]));});ptree(pl,-6,-3,1);ptree(pl,6,-3,1);},
+ s:[P_('la fuente',0,2,1.3,0),P_('el músico callejero',-3,4,1.45,1),P_('la pareja del banco',5,3.3,1.45,1),P_('el vendedor de helados',3,5.5,1.45,1),P_('el árbol grande',6,-3,2.6,0)],
+ m:[['Reel de fiestas patronales','Municipalidad','reel'],['Boda civil en la plaza','Andrea y Luis','boda'],['Documental: la vida en la plaza','Cámara de Comercio','doc']]};
+PLACE_TYPES.taller={n:['Taller Los Pinos','Taller Mecánico El Pistón','Taller de Carpintería Roble','Taller Rueda Libre'],c:0xa06a4a,
+ b:pl=>{shell(pl,11,7,4,0xa06a4a,0x3a3a3a,0);pb(pl,-3,-.92,3.6,3,.12,0x555a62,0);pb(pl,3,-.92,3.6,3,.12,0x555a62,0);pb(pl,-4,3.5,3,.9,1.6,0xb0252d,0,true);pc(pl,4,3,.5,1,0x2a2d33,0,true);pb(pl,6,1,1,1.4,1,0xd0452f,0,true);},
+ s:[P_('el mecánico',0,2.5,1.45,1),P_('el auto en reparación',-4,3.5,1.1,0),P_('el banco de herramientas',5,1,1.1,0),P_('el aprendiz',3,3.5,1.45,1),P_('el portón del taller',-3,-.9,1.5,0)],
+ m:[['Video corporativo del taller','Taller Los Pinos','corp'],['Reel: así se repara un motor','Taller Mecánico El Pistón','reel'],['Comercial de repuestos','Ferretería Central','comercial']]};
+PLACE_TYPES.clinica={n:['Clínica Sonrisa','Clínica Vida Plena','Consultorio Dr. Mora','Clínica Veterinaria Patitas'],c:0xe8f0f4,
+ b:pl=>{shell(pl,11,7,4,0xe8f0f4,0x3f88c5);pb(pl,0,-.8,1.2,2,.2,0x2aa86a,2.4,false,{cast:false});pb(pl,0,-.8,2,.5,.2,0x2aa86a,3.2,false,{cast:false});pb(pl,-4,2.5,2.4,.5,.8,0x9fb7c9,0,true);ptree(pl,5,3,.8);},
+ s:[P_('la doctora en la entrada',0,2.5,1.45,1),P_('la recepción',-4,2.5,1.1,0),P_('el paciente sonriendo',3,3,1.45,1),P_('el letrero de la clínica',0,-.8,3.2,0),P_('la sala de espera',-4,5,.8,0)],
+ m:[['Video corporativo de la clínica','Clínica Sonrisa','corp'],['Spot de campaña de salud','Municipalidad','comercial'],['Testimonios de pacientes','Clínica Vida Plena','doc']]};
+PLACE_TYPES.noria={n:['Noria Luna Park','Rueda Gigante del Sol'],c:0xff9ec7,
+ b:pl=>{const [x,z]=WP(pl,0,-3),sw=Math.abs(pl.f[0])>.5;const t=new THREE.Mesh(new THREE.TorusGeometry(6,.18,8,28),new THREE.MeshStandardMaterial({color:0xff5a8a}));t.position.set(x,7,z);if(sw)t.rotation.y=Math.PI/2;scene.add(t);
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const [px,pz]=WP(pl,Math.cos(a)*6,-3);ball(.5,[0xffd166,0x7fb069,0x3f88c5,0xb565a7][i%4],px,7+Math.sin(a)*6,pz);}
+  pb(pl,-2,-3,.4,7,.4,0x8a8d95,0,true);pb(pl,2,-3,.4,7,.4,0x8a8d95,0,true);pb(pl,0,2,3,.8,1.2,0xd0452f,0,true);},
+ s:[P_('la rueda girando',0,-3,7,0),P_('la familia en la fila',-2,2,1.45,1),P_('el operador',3,1.5,1.45,1),P_('la taquilla',0,2,1.2,0),P_('el niño con algodón de azúcar',-4,4,1.45,1)],
+ m:[['Spot del parque de diversiones','Feria Luna Park','comercial'],['Videoclip bajo las luces de la noria','Banda Los Faroles','clip'],['Reel de cumpleaños en la feria','Familia Rojas','reel']]};
+PLACE_TYPES.carpa={n:['Gran Circo Estrella','Carpa Mágica','Circo Pura Vida'],c:0xd0452f,
+ b:pl=>{pc(pl,0,-4,6,3.5,0xd0452f,0,true);const [x,z]=WP(pl,0,-4);const cone=new THREE.Mesh(new THREE.ConeGeometry(6.4,3.2,12),new THREE.MeshStandardMaterial({color:0xf2f2f2}));cone.position.set(x,5.1,z);scene.add(cone);pc(pl,0,-4,.08,3,0x999999,6.5);pb(pl,0,2,2.6,.1,5,0xb0252d,0,false,{cast:false});ptree(pl,-8,2,.8);},
+ s:[P_('el payaso en la entrada',0,2.5,1.45,1),P_('el malabarista',-3,3.5,1.45,1),P_('la carpa',0,-4,3.5,0),P_('el boletero',3,2,1.45,1),P_('el cartel del show',-5,1.5,1.5,0)],
+ m:[['Documental: la familia del circo','Gran Circo Estrella','doc'],['Spot del nuevo espectáculo','Carpa Mágica','comercial'],['Reel de la función de gala','Circo Pura Vida','reel']]};
+PLACE_TYPES.puesto_feria={n:['Puesto de Algodón','Puesto de Tiro al Blanco','Puesto de Churros','Puesto de Globos','Puesto de Frutas Heladas'],c:0xf4b942,
+ b:pl=>{pb(pl,0,-1.5,5,1,1.6,0x7a5230,0,true);[[-2.4,-2.2],[2.4,-2.2],[-2.4,-.8],[2.4,-.8]].forEach(([a,b])=>pb(pl,a,b,.1,2.6,.1,0x444444,0));pb(pl,0,-1.5,5.6,.12,2.4,[0xe4572e,0xf4b942,0x3f88c5,0xb565a7,0x7fb069][Math.floor(Math.random()*5)],2.6);for(let i=0;i<5;i++)pbl(pl,-2+i*1,-1.5,.17,[0xe4572e,0xf4b942,0x7fb069,0xb565a7,0xffd166][i],1.2);},
+ s:[P_('el vendedor',0,-.2,1.45,1),P_('los productos',0,-1.5,1.3,0),P_('el cliente sonriendo',-2,2,1.45,1),P_('el niño con su premio',2,2.5,1.45,1),P_('el toldo de colores',0,-1.5,2.6,0)],
+ m:[['Reel del puesto estrella','Feria Luna Park','reel'],['Comercial de golosinas','Dulces Doña Marta','comercial'],['Videoclip colorido en la feria','Banda Los Faroles','clip']]};
+PLACE_TYPES.pulperia={n:['Pulpería Don Chepe','Pulpería La Esquinita','Mini Súper El Ahorro','Pulpería Doña Ana'],c:0xd1c1a5,
+ b:pl=>{shell(pl,8,6,3.4,0xd1c1a5,0x7a3a2a);pb(pl,0,1,8,.12,2,0x7a3a2a,2.6,false,{cast:false});[-3.8,3.8].forEach(k=>pb(pl,k,1,.12,2.6,.12,0x444444,0));pb(pl,-3,.5,1.2,.9,1,0x9a7a4a,0,true);pb(pl,3,.5,1.2,.9,1,0x9a7a4a,0,true);},
+ s:[P_('la dueña tras el mostrador',0,-1.5,1.45,1),P_('el cliente con su bolsa',-2,2.5,1.45,1),P_('las cajas de frutas',3,.5,1,0),P_('el rótulo de la pulpería',0,-.9,2.8,0),P_('el perro del barrio',-4,3.5,.6,0)],
+ m:[['Reel de la pulpería del barrio','Pulpería Don Chepe','reel'],['Comercial de productos locales','Cooperativa del Valle','comercial'],['Documental: 40 años de mostrador','Pulpería La Esquinita','doc']]};
+PLACE_TYPES.fabrica={n:['Fábrica de Cartón Delta','Planta de Alimentos Sabor','Fábrica Textil Aurora','Metalúrgica El Yunque'],c:0x9aa0a8,
+ b:pl=>{pb(pl,0,-6,14,6,10,0x9aa0a8,0,true);pb(pl,0,-6,14.4,.3,10.4,0x555a62,6);pc(pl,-5,-9,1,11,0x8a5a4a,0,true);pc(pl,-5,-9,1.1,.6,0x2a2d33,11);pb(pl,3,-.92,4,3.2,.12,0x555a62,0);[[5,2],[-3,3]].forEach(([a,b])=>pb(pl,a,b,1.4,1.4,1.4,0xc9a227,0,true));},
+ s:[P_('el operario con casco',0,2.5,1.45,1),P_('la línea de producción',3,-.92,1.5,0),P_('la chimenea',-5,-9,11,0),P_('el supervisor',-3,4.5,1.45,1),P_('las cajas apiladas',5,2,1,0)],
+ m:[['Video corporativo industrial','Cadena Sabor Tico','corp'],['Documental: cómo se fabrica','Fábrica de Cartón Delta','doc'],['Campaña de marca de manufactura','Agencia Meridiano','campana']]};
+PLACE_TYPES.bodega={n:['Bodega Logística Norte','Bodega Frío Sur','Almacén Central de Café','Centro de Distribución Sol'],c:0xb0b4ba,
+ b:pl=>{pb(pl,0,-5,15,4.5,8,0xb0b4ba,0,true);pb(pl,0,-5,15.4,.3,8.4,0x6a6f78,4.5);[-4,0,4].forEach(k=>pb(pl,k,-.92,3,3.2,.12,0x8a8d95,0));[[-6,3],[-3.4,3],[0,3.4],[4,3]].forEach(([a,b],i)=>pb(pl,a,b,2.4,2.4,5,[0xd0452f,0x3f88c5,0x2aa86a,0xc9a227][i],0,true));},
+ s:[P_('el montacarguista',0,6,1.45,1),P_('los contenedores',-4.5,3,1.2,0),P_('la puerta de carga',0,-.92,1.6,0),P_('la encargada con tableta',3,5.5,1.45,1),P_('el pasillo de estantes',4,3,1.3,0)],
+ m:[['Video corporativo de logística','Banco Horizonte','corp'],['Spot de envíos rápidos','Mensajería Veloz','comercial'],['Reel del equipo de bodega','Centro de Distribución Sol','reel']]};
+PLACE_TYPES.gasolinera={n:['Gasolinera Ruta 1','Estación Los Pinos','Servicentro El Viajero'],c:0xe8e8e8,
+ b:pl=>{pb(pl,0,2,10,.4,6,0xd0452f,4);[-4.5,4.5].forEach(k=>pb(pl,k,2,.3,4,.3,0xdddddd,0));[-2,2].forEach(k=>pb(pl,k,2,.6,1.5,.9,0x2a2d33,0,true));shell(pl,5,4,3.2,0xe8e8e8,0xd0452f,0);pb(pl,6.5,-3,2,.3,2,0x3f88c5,0);},
+ s:[P_('el empleado en la bomba',-2,2,1.45,1),P_('el carro cargando',0,4.5,1.2,0),P_('el techo de la estación',0,2,4.2,0),P_('la tienda de conveniencia',0,-.9,1.6,0),P_('el conductor',2.5,3.5,1.45,1)],
+ m:[['Spot de la estación de servicio','Servicentro El Viajero','comercial'],['Videoclip road-trip','Banda Los Faroles','clip'],['Reel de la promoción de verano','Gasolinera Ruta 1','reel']]};
+PLACE_TYPES.hangar={n:['Hangar Alfa','Hangar de Avionetas Cóndor','Escuela de Vuelo Horizonte'],c:0xcfd6dd,
+ b:pl=>{pb(pl,0,-5,13,4.5,10,0xcfd6dd,0,true);pb(pl,0,-5,11,.8,10,0xb7bec6,4.5);pb(pl,0,-5,8,.7,10,0xa0a8b0,5.3);pb(pl,0,-.95,8,3.6,.12,0x555a62,0);
+  pb(pl,0,2.5,1.2,.7,6,0xffffff,.5);pb(pl,0,3.2,9,.12,1.3,0xffffff,1.1);pb(pl,0,6,1.2,1.4,.6,0xffffff,.7);pb(pl,0,2.5,.6,.5,1,0xd0452f,1.1);},
+ s:[P_('el piloto junto a la avioneta',2.5,3,1.45,1),P_('la avioneta',0,3.2,1.2,0),P_('el mecánico de a bordo',-3,1,1.45,1),P_('la entrada del hangar',0,-1,2,0),P_('la manga de viento',-6,4,3,0)],
+ m:[['Reel de bautizo de vuelo','Escuela de Vuelo Horizonte','reel'],['Comercial de aviación','Hangar de Avionetas Cóndor','comercial'],['Documental: pilotos de pueblo','Hangar Alfa','doc']]};
+PLACE_TYPES.torre={n:['Torre de Control','Torre Meteorológica','Torre de Radio Cielo'],c:0xe8e8e8,
+ b:pl=>{pb(pl,0,-3,3,10,3,0xe8e8e8,0,true);pb(pl,0,-3,5,2.4,5,0x7ab0d4,10);pb(pl,0,-3,5.6,.3,5.6,0x555a62,12.4);pc(pl,0,-3,.08,3,0xd0452f,12.7);pb(pl,0,1,6,.05,6,0xbdbdbd,0,false,{cast:false});},
+ s:[P_('el controlador en lo alto',0,-3,11,1),P_('la torre completa',0,-3,6,0),P_('el técnico de radio',2,2,1.45,1),P_('la pista al fondo',0,8,.5,0),P_('la antena',0,-3,13.5,0)],
+ m:[['Documental: voces del aeródromo','Torre de Radio Cielo','doc'],['Spot institucional de aviación civil','Agencia Meridiano','corp'],['Toma aérea del aeródromo','Hangar Alfa','inmob']]};
+PLACE_TYPES.granero={n:['Granero Rojo','Granero Santa Rosa','Lechería La Pradera','Granero de los Abuelos'],c:0xb0252d,
+ b:pl=>{pb(pl,0,-5,11,5,9,0xb0252d,0,true);pb(pl,0,-5,11.6,.4,9.6,0x6a2a1a,5);pb(pl,0,-.95,4,3.6,.12,0xf2f2f2,0);pc(pl,7,-5,1.6,8,0xd8dadf,0,true);pbl(pl,7,-5,1.7,0xd8dadf,8);pb(pl,-6,3,3,1,.3,0x7a5230,0);},
+ s:[P_('el granjero en la puerta',0,2.5,1.45,1),P_('el silo',7,-5,5,0),P_('las pacas de heno',-4,2,.9,0),P_('la niña con la canasta',3,3.5,1.45,1),P_('la fachada roja',0,-1,3,0)],
+ m:[['Documental: del campo a la mesa','Cooperativa del Valle','doc'],['Comercial de lácteos','Lechería La Pradera','comercial'],['Reel de la jornada de cosecha','Granero Santa Rosa','reel']]};
+PLACE_TYPES.invernadero={n:['Invernadero Orquídeas','Cafetal La Cima','Vivero Raíces','Huerta Orgánica Sol'],c:0xcfe8d8,
+ b:pl=>{pb(pl,0,-5,12,3,9,0xcfe8d8,0,false,{mat:new THREE.MeshStandardMaterial({color:0xcfe8d8,transparent:true,opacity:.45,roughness:.2})});pb(pl,0,-5,12.2,.2,9.2,0xcfe8d8,3);for(let i=-2;i<=2;i++){pb(pl,i*2.2,-5,.9,.5,7,0x6a4a2a,0);for(let k=0;k<5;k++)pbl(pl,i*2.2,-8+k*1.5,.35,[0x3f8a4c,0xd04a8a,0xf4b942][(i+k+5)%3],.8);}},
+ s:[P_('la agrónoma',0,2.5,1.45,1),P_('las hileras de plantas',0,-5,1,0),P_('el recolector',-3,3,1.45,1),P_('las flores en primer plano',3,-1.5,.9,0),P_('la entrada del invernadero',0,-.8,1.5,0)],
+ m:[['Reel de la cosecha de café','Cafetal La Cima','reel'],['Comercial de plantas ornamentales','Vivero Raíces','comercial'],['Documental: agricultura orgánica','Cooperativa del Valle','doc']]};
+PLACE_TYPES.establo={n:['Establo Los Cerezos','Finca Ganadera El Roble','Rancho Doña Pilar','Caballeriza Sol y Sombra'],c:0x9a7a4a,
+ b:pl=>{pb(pl,0,-4,10,3,6,0x9a7a4a,0,true);pb(pl,0,-4,10.6,.3,6.6,0x5a3a22,3);for(let i=0;i<10;i++){pb(pl,-6+i*1.3,4,.12,1.1,.12,0x5a3a22,0);}pb(pl,0,4,13,.1,.1,0x5a3a22,.9);pb(pl,0,4,13,.1,.1,0x5a3a22,.5);pb(pl,-2,2.5,1.8,1,.8,0xf2f2f2,0);pb(pl,-1.2,2.5,.6,.7,.6,0xf2f2f2,.9);pb(pl,2,2,1.8,1,.8,0x6a4a2a,0);},
+ s:[P_('el ganadero',3.5,1,1.45,1),P_('la vaca',-2,2.5,1.1,0),P_('el caballo',2,2,1.2,0),P_('la cerca',0,4,1,0),P_('la jinete',-4,0,1.45,1)],
+ m:[['Documental: la vida en la finca','Rancho Doña Pilar','doc'],['Spot de carne premium','Finca Ganadera El Roble','comercial'],['Reel de paseo a caballo','Caballeriza Sol y Sombra','reel']]};
+PLACE_TYPES.iglesia={n:['Iglesia San José','Iglesia de la Candelaria','Ermita del Valle','Parroquia Santa Ana','Capilla de los Ángeles'],c:0xf2ece0,
+ b:pl=>{pb(pl,0,-6,8,6,10,0xf2ece0,0,true);pb(pl,0,-6,8.6,.4,10.6,0x8a4a3a,6);pb(pl,0,-1.5,4,10,3,0xf2ece0,0,true);pb(pl,0,-1.5,4.4,.5,3.4,0x8a4a3a,10);pb(pl,0,-.9,2,3.2,.12,0x5a3a22,0);pb(pl,0,-1.5,.2,1.6,.2,0xf2ece0,10.5);pb(pl,0,-1.5,.9,.2,.2,0xf2ece0,11.3);ptree(pl,-6,3,1);ptree(pl,6,3,1);},
+ s:[P_('la novia en la puerta',0,3,1.45,1),P_('el campanario',0,-1.5,9.5,0),P_('el sacristán',-3,4,1.45,1),P_('la entrada principal',0,-.9,1.8,0),P_('el atrio',0,5,.5,0)],
+ m:[['Video de boda en la iglesia','Boda de Sofía y Mateo','boda'],['Documental: 200 años de historia','Parroquia Santa Ana','doc'],['Reel de Semana Santa','Parroquia Santa Ana','reel']]};
+PLACE_TYPES.muelle={n:['Muelle Principal','Muelle de los Pescadores','Embarcadero Sur'],c:0x8a6a42,
+ b:pl=>{pb(pl,0,2,3,.4,22,0x8a6a42,.5,false);for(let i=0;i<8;i++){pb(pl,-1.4,-6+i*3,.25,1,.25,0x5a3e28,-.3);pb(pl,1.4,-6+i*3,.25,1,.25,0x5a3e28,-.3);}pb(pl,3,3.5,2.5,1.2,1.2,0xb0252d,0,true);pb(pl,-3,5,1.5,.8,1.5,0xc9a227,0,true);},
+ s:[P_('el pescador con su caña',0,5,1.5,1),P_('el final del muelle',0,12,1,0),P_('las redes tendidas',-3,5,.8,0),P_('el niño mirando el mar',1,2,1.5,1),P_('los pilotes',1.4,-3,.8,0)],
+ m:[['Documental: pescadores del puerto','Cofradía de Pescadores','doc'],['Reel de excursión en bote','Aventuras Mar y Monte','reel'],['Videoclip al atardecer en el muelle','Banda Los Faroles','clip']]};
+PLACE_TYPES.barco={n:['Bote Doña Luz','Lancha El Marlín','Velero La Gaviota','Catamarán Sol Naciente'],c:0x3f88c5,
+ b:pl=>{pb(pl,0,0,4,1.2,12,0xf2f2f2,0,true);pb(pl,0,-5,4.2,.3,2,0x3f88c5,1.2);pb(pl,0,3,2.6,1.2,3,0xe8e8e8,1.2);pb(pl,0,3,2.8,.12,3.2,0x3f88c5,2.4);pc(pl,0,-2,.1,6,0x8a6a42,1.2);pb(pl,.5,-2,.05,4,2.4,0xffffff,2.4);pb(pl,0,8,3,.4,3,0x8a6a42,.2);},
+ s:[P_('el capitán al timón',0,3,2,1),P_('la vela',.5,-2,4,0),P_('la tripulante en la proa',0,-5,1.9,1),P_('la cubierta',0,0,1.4,0),P_('la red de pesca',-1,0,1.4,0)],
+ m:[['Reel de pesca deportiva','Aventuras Mar y Monte','reel'],['Comercial de turismo náutico','Cámara de Turismo','comercial'],['Documental: un día en el mar','Cofradía de Pescadores','doc']]};
+PLACE_TYPES.lonja={n:['Lonja de Pescado Fresco','Mercado del Puerto','Pescadería Don Mario'],c:0x7ab0d4,
+ b:pl=>{shell(pl,12,6,3.4,0x7ab0d4,0x2a4a66);[-4,0,4].forEach(k=>{pb(pl,k,2,2.6,.9,1.2,0xdfe6ea,0,true);for(let i=0;i<3;i++)pbl(pl,k-.8+i*.8,2,.2,[0xc0392b,0x9aa0a8,0xe0a97d][i],1.05);});pb(pl,0,2.5,12,.12,3,0x3f88c5,2.8,false,{cast:false});},
+ s:[P_('el pescadero',0,3.8,1.45,1),P_('el pescado en hielo',-4,2,1,0),P_('la clienta regateando',3,4.5,1.45,1),P_('el mostrador',0,2,1.1,0),P_('el rótulo de la lonja',0,-.9,3,0)],
+ m:[['Reel de pesca del día','Mercado del Puerto','reel'],['Comercial de mariscos','Restaurante Brasa','comercial'],['Documental: del mar al plato','Cofradía de Pescadores','doc']]};
+PLACE_TYPES.faro={n:['Faro del Puerto','Faro Punta Blanca'],c:0xf2f2f2,
+ b:pl=>{pc(pl,0,-4,2.6,14,0xf2f2f2,0,true,{r2:1.6});pc(pl,0,-4,1.9,1.3,0xc0392b,5);pc(pl,0,-4,1.7,1.3,0xc0392b,9);pc(pl,0,-4,1.8,1.2,0x2a2d33,14);const [x,z]=WP(pl,0,-4);const l=ball(.9,0xfff2a0,x,14.9,z,{mat:new THREE.MeshBasicMaterial({color:0xfff2a0})});pb(pl,0,2,6,.05,6,0xcfc8b8,0,false,{cast:false});},
+ s:[P_('el farero',2.5,1,1.45,1),P_('el faro completo',0,-4,8,0),P_('la lámpara',0,-4,14.9,0),P_('la puerta del faro',0,-1.2,1.5,0),P_('la pareja de turistas',-3,3,1.45,1)],
+ m:[['Documental: el último farero','Cámara de Turismo','doc'],['Toma aérea del faro y la costa','Aventuras Mar y Monte','inmob'],['Videoclip junto al faro','Banda Los Faroles','clip']]};
+PLACE_TYPES.refugio={n:['Cabaña El Quetzal','Refugio del Bosque','Cabaña Río Claro','Refugio La Nube','Cabaña de Troncos'],c:0x8a5a3a,
+ b:pl=>{pb(pl,0,-4,8,3.4,6,0x8a5a3a,0,true);pb(pl,0,-4,8.8,.4,6.8,0x4a3020,3.4);pb(pl,0,-.95,1.6,2.3,.12,0x3a2a1e,0);pb(pl,-2.4,-.95,1.4,1.1,.1,0xffd08a,1,false,{cast:false});pc(pl,0,3.5,.7,.3,0x555a62,0);pc(pl,0,3.5,.25,.4,0xff7a2a,.3,false,{mat:new THREE.MeshBasicMaterial({color:0xff7a2a})});[-1.5,1.5].forEach(k=>pb(pl,k,3.5,.35,.35,1.1,0x7a5230,0,false));ptree(pl,-6,-2,1.4);ptree(pl,6,-2,1.4);},
+ s:[P_('el guía con mochila',-2,3,1.45,1),P_('la fogata',0,3.5,.5,0),P_('la excursionista',2.5,4,1.45,1),P_('la cabaña',0,-1,2,0),P_('el bosque detrás',0,-8,3,0)],
+ m:[['Reel de campamento en la naturaleza','Aventuras del Cerro','reel'],['Comercial de ecoturismo','Cámara de Turismo','comercial'],['Documental: guardianes del bosque','Reserva del Lago','doc']]};
+PLACE_TYPES.cascada={n:['Cascada La Fortuna Chica','Catarata Velo de Novia','Cascada Los Tucanes'],c:0x7a7a72,
+ b:pl=>{pb(pl,0,-7,10,9,3,0x7a7a72,0,true);pb(pl,0,-5.4,2.2,9,.15,0x9fd8f2,0,false,{mat:new THREE.MeshStandardMaterial({color:0x9fd8f2,emissive:0x6fb8d8,emissiveIntensity:.5,transparent:true,opacity:.85})});pc(pl,0,-2,4.5,.12,0x4aa3d8,0,false,{cast:false,seg:20});[[-4,0],[4,-1],[3,2]].forEach(([a,b])=>pbl(pl,a,b,.7,0x8a8d90,.3));ptree(pl,-7,-4,1.3);ptree(pl,7,-4,1.3);},
+ s:[P_('la cascada',0,-5.4,5,0),P_('el excursionista junto al agua',3,1.5,1.45,1),P_('la poza',0,-2,.3,0),P_('las rocas',-4,0,.8,0),P_('la fotógrafa de naturaleza',-3,3.5,1.45,1)],
+ m:[['Documental: agua y selva','Reserva del Lago','doc'],['Videoclip junto a la cascada','Banda Los Faroles','clip'],['Campaña de turismo de naturaleza','Cámara de Turismo','campana']]};
+PLACE_TYPES.lago={n:['Lago Azul','Laguna Espejo','Lago de los Patos'],c:0x4aa3d8,
+ b:pl=>{pc(pl,0,-2,9,.12,0x4aa3d8,0,false,{cast:false,seg:28,mat:new THREE.MeshStandardMaterial({color:0x4aa3d8,roughness:.2,metalness:.2})});pb(pl,0,2.5,2,.3,8,0x8a6a42,.1);pb(pl,-2,5,3,.5,1,0x7a5230,0);pb(pl,4,5.5,1.2,.5,2.6,0xd0452f,0);ptree(pl,-8,4,1.2);ptree(pl,8,3,1.2);},
+ s:[P_('la remera en el bote',3,-.5,1,1),P_('el muelle de madera',0,4,.8,0),P_('el pescador en la orilla',-2,5.5,1.45,1),P_('el reflejo del cielo',0,-3,.3,0),P_('los patos',-5,-1,.5,0)],
+ m:[['Reel de paseo en lancha','Aventuras del Cerro','reel'],['Boda junto al lago','Boda de Andrea y Luis','boda'],['Documental: la vida del lago','Reserva del Lago','doc']]};
+/* lugares existentes (misiones por tipo) */
+const EXIST_M={
+ parque:[['Reel de actividades en el parque','Municipalidad','reel'],['Boda al aire libre','Boda de Sofía y Mateo','boda'],['Videoclip acústico en el parque','Banda Los Faroles','clip']],
+ cafe:[['Comercial de la cafetería','Café Volcán','comercial'],['Reel del barista','Cafetería Nube','reel'],['Video corporativo de café de origen','Cooperativa del Valle','corp']],
+ mercado:[['Reel del mercado del barrio','Mercado del barrio','reel'],['Documental: voces del mercado','Cámara de Comercio','doc'],['Campaña de producto local','Agencia Meridiano','campana']],
+ azotea:[['Video inmobiliario de la azotea','Inmobiliaria Verde','inmob'],['Videoclip sobre la ciudad','Banda Los Faroles','clip'],['Video corporativo con vista panorámica','Banco Horizonte','corp']],
+ playa:[['Boda en la playa','Boda de Andrea y Luis','boda'],['Documental: la costa dorada','Cámara de Turismo','doc'],['Campaña de verano en la playa','Tienda Mar y Monte','campana']]
+};
+const DIST_PLACES={
+ colinas:['casa','casa','casa','mansion','mansion','hotel','mirador','restaurante','gimnasio'],
+ campus:['facultad','biblioteca','estadio','teatro','plaza','restaurante','taller','casa','gimnasio','clinica'],
+ feria:['noria','carpa','puesto_feria','puesto_feria','teatro','restaurante','plaza','hotel','pulperia','puesto_feria'],
+ industrial:['fabrica','fabrica','bodega','bodega','taller','taller','gasolinera','restaurante','clinica','gimnasio'],
+ aerodromo:['hangar','hangar','torre','hotel','restaurante','taller','bodega','mirador','gasolinera'],
+ campo:['granero','granero','invernadero','invernadero','establo','establo','casa','pulperia','restaurante','mirador'],
+ pueblo:['iglesia','iglesia','plaza','plaza','pulperia','pulperia','restaurante','hotel','clinica','teatro'],
+ puerto:['muelle','barco','barco','lonja','faro','restaurante','bodega','pulperia','hotel'],
+ mirador:['mirador','mirador','hotel','restaurante','refugio','refugio','cascada','casa','iglesia'],
+ reserva:['lago','lago','refugio','refugio','cascada','mirador','restaurante','pulperia','casa']
+};
+
+/* ================= Construcción de distritos y lugares ================= */
+const PLACES=[],ZONE_OF={parque:'centro',cafe:'centro',mercado:'sanrafael',azotea:'alba',playa:'playa'};
+function approachAngles(d){const out=[];ROADS.forEach(R=>{const p=R.pts,a=p[0],b=p[p.length-1];
+  if(Math.hypot(a.x-d.c[0],a.z-d.c[1])<2){const q=p.find(v=>Math.hypot(v.x-a.x,v.z-a.z)>45);if(q)out.push(Math.atan2(q.z-a.z,q.x-a.x));}
+  if(Math.hypot(b.x-d.c[0],b.z-d.c[1])<2){let q=null;for(let i=p.length-1;i>=0;i--)if(Math.hypot(p[i].x-b.x,p[i].z-b.z)>45){q=p[i];break;}if(q)out.push(Math.atan2(q.z-b.z,q.x-b.x));}});return out;}
+const angD=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
+const nameCount={};
+function buildDistrict(d){
+  const [cx,cz]=d.c,apr=approachAngles(d);
+  /* plaza, anillo vial, monumento */
+  const plz=new THREE.Mesh(new THREE.CircleGeometry(14,32),new THREE.MeshStandardMaterial({color:0xcfc8b8,roughness:1}));plz.rotation.x=-Math.PI/2;plz.position.set(cx,.06,cz);plz.receiveShadow=true;scene.add(plz);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(30,36,48),new THREE.MeshStandardMaterial({color:0x44474e,roughness:1,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1}));ring.rotation.x=-Math.PI/2;ring.position.set(cx,.07,cz);ring.receiveShadow=true;scene.add(ring);
+  fountain(cx+6,cz+6);box(1.2,4.5,1.2,d.col,cx-4,0,cz-4,{col:true});
+  [0,Math.PI].forEach(r=>{const s=plane(5.6,1.3,canvasTex(512,120,(g,w,hh)=>{g.fillStyle='#14181f';g.fillRect(0,0,w,hh);g.fillStyle='#'+d.col.toString(16).padStart(6,'0');g.font='bold 52px sans-serif';g.textAlign='center';g.fillText(d.n,w/2,hh/2+18,w-24);}),cx-4+(r?-.65:.65)*0,5.2,cz-4+(r?-.65:.65),r,true);});
+  const L=new THREE.PointLight(0xffe2b8,.7,48,1.5);L.position.set(cx,7,cz);scene.add(L);
+  /* huecos disponibles */
+  const slots=[];const inner=[],outer=[];
+  for(let k=0;k<8;k++){const a=(k*45+22.5)*Math.PI/180;if(!apr.some(q=>angD(a,q)<.55))inner.push({a,r:22,out:1});}
+  for(let k=0;k<12;k++){const a=(k*30+15)*Math.PI/180;if(!apr.some(q=>angD(a,q)<.34))outer.push({a,r:46,out:-1});}
+  for(let i=0;i<Math.max(inner.length,outer.length);i++){if(outer[i])slots.push(outer[i]);if(inner[i])slots.push(inner[i]);}
+  const types=DIST_PLACES[d.id];
+  types.forEach((tk,i)=>{
+    const T=PLACE_TYPES[tk],sl=slots[i];if(!T||!sl)return;
+    const x=cx+Math.cos(sl.a)*sl.r,z=cz+Math.sin(sl.a)*sl.r;
+    let ux=Math.cos(sl.a)*sl.out,uz=Math.sin(sl.a)*sl.out;let f;if(Math.abs(ux)>Math.abs(uz))f=[Math.sign(ux),0];else f=[0,Math.sign(uz)];
+    const pl=mkPl(x,z,f);
+    T.b(pl);
+    nameCount[tk]=(nameCount[tk]||0);const nm=T.n[nameCount[tk]%T.n.length]+(nameCount[tk]>=T.n.length?' II':'');nameCount[tk]++;
+    pc(pl,5.5,10.5,.07,2.2,0x444444,0);psign(pl,5.5,10.5,2.6,3.8,nm);
+    const subs=T.s.map(s=>{const [wx,wz]=WP(pl,s[1],s[2]);return [s[0],wx,wz,s[3],s[4]];});
+    const mk=WP(pl,0,9),park=WP(pl,0,11.5+(sl.out>0?0:0));
+    /* el estacionamiento queda sobre el anillo vial */
+    const pk=[cx+Math.cos(sl.a)*33,cz+Math.sin(sl.a)*33];
+    const loc={id:d.id+'_'+i,n:nm,c:[x,z],park:pk,mk:[mk[0],mk[1]],roof:0,subs,type:tk,dist:d.id,gen:true,far:Math.hypot(x-8,z-19)>260};
+    PLACES.push(loc);LOCS.push(loc);LOCBY[loc.id]=loc;
+    const r=new THREE.Mesh(new THREE.TorusGeometry(.7,.07,8,24),new THREE.MeshBasicMaterial({color:0xffb347}));r.rotation.x=Math.PI/2;r.position.set(loc.mk[0],.14,loc.mk[1]);scene.add(r);loc.ring=r;
+    loc.proxy=proxy(1.8,2,1.8,loc.mk[0],0,loc.mk[1],{label:()=>mkLabel(loc),fn:()=>mkAct(loc)});
+  });
+}
+DIST.forEach(buildDistrict);
+LOCS.forEach(l=>{if(!l.dist)l.dist=ZONE_OF[l.id]||'centro';if(!l.type)l.type=l.id;});
+/* extensión del muelle de la playa hasta el agua */
+box(2.6,.3,18,0x8a6a42,447,.7,92,{});for(let i=0;i<5;i++)box(.2,.8,.2,0x5a3e28,445.8,0,86+i*3.6,{});
+/* ================= ~100 misiones ligadas a su lugar ================= */
+const MISSIONS=[];
+{const byType={};LOCS.forEach(l=>{(byType[l.type]=byType[l.type]||[]).push(l.id);});
+ const add=(type,arr)=>arr.forEach(([t,cl,kind])=>{if(byType[type]&&byType[type].length)MISSIONS.push({id:'ms'+MISSIONS.length,t,cl,kind,type,places:byType[type]});});
+ Object.keys(PLACE_TYPES).forEach(k=>add(k,PLACE_TYPES[k].m));Object.keys(EXIST_M).forEach(k=>add(k,EXIST_M[k]));}
+function jobOf(kind){return JOBS.find(j=>j.id===kind);}
+function genLeads(n){
+  const pool=MISSIONS.filter(m=>jobOf(m.kind).lvl<=level());if(!pool.length)return;
+  for(let i=0;i<n&&S.leads.length<8;i++){
+    const hi=pool.filter(m=>jobOf(m.kind).lvl>=level()-2),m=(Math.random()<.65&&hi.length?pick(hi):pick(pool)),jt=jobOf(m.kind);
+    if(S.leads.some(l=>l.n===m.t)||S.jobs.some(j=>j.n===m.t))continue;
+    const loc=pick(m.places),L=LOCBY[loc],dist=Math.hypot(L.mk[0]-8,L.mk[1]-19),v=rnd(.85,1.25)*(1+Math.min(.45,dist/700));
+    S.leads.push({id:S.nid++,type:jt.id,n:m.t,cliente:m.cl,pay:Math.round(jt.pay*v),tomas:jt.tomas,days:jt.days+(dist>200?2:0),xp:jt.xp,cam:jt.cam,lvl:jt.lvl,exp:S.day+3,loc,list:makePlan(jt,loc)});
+  }
+}
+/* ================= Viaje rápido por zonas ================= */
+const ZONES_TR=[{id:'centro',n:'Centro y avenida',extra:[{id:'studio',n:'Tu estudio',x:8,z:19.4,pp:null},{id:'casa',n:'Tu casa',x:-9,z:19.4,pp:[-8,15]},{id:'bar',n:'Bar La Esquina',x:102,z:19.4,pp:[102,15]},{id:'casino',n:'Casino La Suerte',x:44,z:19.4,pp:[44,15]}]},
+ {id:'sanrafael',n:'Mercado San Rafael'},{id:'alba',n:'Edificio Alba'},{id:'playa',n:'Playa Dorada'}].concat(DIST.map(d=>({id:d.id,n:d.n})));
+function zoneRows(z){return (z.extra||[]).concat(LOCS.filter(l=>l.dist===z.id).map(l=>({id:l.id,n:l.n,x:l.park[0],z:l.park[1],far:l.far})));}
+function zoneCenter(z){const r=zoneRows(z);const ax=r.reduce((a,b)=>a+b.x,0)/r.length,az=r.reduce((a,b)=>a+b.z,0)/r.length;return [ax,az];}
+function openTravel(zid){
+  const costOf=(x,z)=>{const d=Math.hypot(x-V.x,z-V.z);return {d,cost:Math.round(d/30),mins:Math.round(d/9)};};
+  const node=h('div',{style:'display:flex;flex-direction:column;gap:8px;max-height:64vh;overflow:auto'});
+  if(!zid){node.append(h('h2',{text:'Viaje rápido'}),h('p',{text:'Elige una zona. Cuesta gasolina y tiempo según la distancia. Seguirás dentro de la furgoneta.'}));
+    ZONES_TR.forEach(z=>{const rows=zoneRows(z);if(!rows.length)return;const [cx,cz]=zoneCenter(z),c=costOf(cx,cz);node.append(rowEl(z.n,rows.length+' lugar(es) · '+Math.round(c.d)+' m · desde $'+c.cost,h('button',{class:'pri',onclick:()=>openTravel(z.id)},'Ver')));});
+    node.append(h('button',{onclick:()=>closeModal()},'Seguir conduciendo'));}
+  else{const z=ZONES_TR.find(q=>q.id===zid);node.append(h('h2',{text:z.n}));
+    zoneRows(z).forEach(r=>{const c=costOf(r.x,r.z);node.append(rowEl(r.n,Math.round(c.d)+' m · $'+c.cost+' · ~'+c.mins+' min',h('button',{disabled:c.d<25||S.cash<c.cost,onclick:()=>{closeModal(true);fastTravel(r,c.cost,c.mins);tryLock();}},c.d<25?'Aquí':'Ir')));});
+    node.append(h('button',{onclick:()=>openTravel()},'← Zonas'),h('button',{onclick:()=>closeModal()},'Seguir conduciendo'));}
+  openModal('van',node);
+}
+function fastTravel(r,cost,mins){fadeTo(()=>{spend(cost);S.min+=mins;V.x=r.x;V.z=r.z;V.h=Math.PI/2;V.v=0;syncVan();
+  if(V.drive){P.yaw=V.h+Math.PI;P.pitch=0;}else{
+    if(r.id==='studio'){P.x=6.4;P.z=14.8;}else if(r.pp){P.x=r.pp[0];P.z=r.pp[1];}else{const l=LOCBY[r.id];if(l&&l.gen){const dx=l.mk[0]-r.x,dz=l.mk[1]-r.z,n=Math.hypot(dx,dz)||1;P.x=r.x+dx/n*3.4;P.z=r.z+dz/n*3.4;}else{P.x=l.mk[0]-2.6;P.z=23.2;}}
+    P.y=0;P.yaw=Math.PI;P.pitch=0;}
+  toast('Llegaste a '+r.n+'.');});}
+function goRoof(up){const [bx,bz]=LOCBY.azotea.c;fadeTo(()=>{if(up){P.x=bx;P.z=bz-7;P.y=16;P.yaw=0;}else{P.x=bx;P.z=bz-11.8;P.y=0;P.yaw=Math.PI;}P.pitch=0;});}
+
+/* ================= Historia, sucursales automatizables y mapa ================= */
+if(!S.br)S.br={};if(S.story==null)S.story=0;if(S.storyI==null)S.storyI=-1;
+const HERO={n:'Rafa Solano',tio:'Don Aurelio',rival:'Ricardo Vega'};
+const AUTO_N=['Manual (solo tú)','Recepcionista','Editor automático','Gerente + sistema de turnos'];
+const BR_BASE=14000,BR_RATE=1100;
+const brKeys=()=>Object.keys(S.br);
+const brCost=()=>Math.round(BR_BASE*(1+brKeys().length*.9));
+const brUp=(i,a)=>Math.round([0,5000,14000,36000][a]*(1+i*.3));
+const brRate=id=>BR_RATE*(1+DIST.findIndex(d=>d.id===id)%4*.25);
+const AUTO_INC=[.15,.4,.7,1],AUTO_WAGE=[.05,.15,.25,.35];
+/* capítulos */
+const CH=[
+ {t:'La herencia',who:'Don Aurelio',txt:'«Rafa, el estudio es tuyo. Sesenta años de claquetas, polvo y café. Abre las puertas, atiende gente y aprende el oficio. Todo gran director empezó cobrando fotos de carnet.»',goal:'Atiende a 3 clientes en el estudio',ok:s=>s.stats.served>=3,rew:[250,20]},
+ {t:'El primer encargo',who:'Don Aurelio',txt:'«Los clientes de verdad no vienen al estudio: te esperan en su negocio. Abre el teléfono (Tab), acepta un encargo, sube a la furgoneta y ve al punto naranja.»',goal:'Entrega tu primer encargo de video',ok:s=>s.stats.jobs>=1,rew:[500,50]},
+ {t:'Equipo propio',who:'Don Aurelio',txt:'«Con la cámara del teléfono llegas hasta cierto punto. Visita Cine-Equipo y sube de nivel tu cámara: lo notarás en el cuerpo de la cámara y en tus fotos.»',goal:'Mejora tu cámara (nivel 1 o más)',ok:s=>G_('camara')>=1,rew:[400,40]},
+ {t:'Más allá de la avenida',who:'Don Aurelio',txt:'«Esta ciudad es más grande que la calle del estudio. Hay colinas, un puerto, un circo… y todos necesitan quien los grabe. Entrega 4 encargos y ya serás conocido.»',goal:'Entrega 4 encargos en total',ok:s=>s.stats.jobs>=4,rew:[900,90]},
+ {t:'El rival',who:'Ricardo Vega',txt:'«Soy Ricardo Vega, de Vértigo Films. Dicen que el chico Solano tiene talento. Veamos si es capaz de una entrega perfecta… o si me vende el estudio de su tío.»',goal:'Consigue una entrega de 5 estrellas',ok:s=>s.stats.five>=1,rew:[2000,150]},
+ {t:'Segundo estudio',who:'Don Aurelio',txt:'«Ahora piensa en grande, hijo. En cada distrito hay un local en venta (busca el cartel «SE VENDE» junto a la plaza). Compra tu primera sucursal.»',goal:'Compra una sucursal (nivel 4 requerido)',ok:s=>Object.keys(s.br||{}).length>=1,rew:[1500,120]},
+ {t:'Piloto automático',who:'Don Aurelio',txt:'«Un estudio que depende de ti no es un negocio, es un trabajo. Contrata personal y automatiza la sucursal: así gana dinero mientras tú sales a rodar.»',goal:'Sube una sucursal al nivel de automatización 2',ok:s=>Object.values(s.br||{}).some(b=>b.auto>=2),rew:[3000,200]},
+ {t:'Imperio Claqueta',who:'Ricardo Vega',txt:'«Tres locales… Vaya. No me lo esperaba. Pero la ciudad tiene diez distritos, Solano. Veamos hasta dónde llegas.»',goal:'Ten 3 sucursales y nivel 8',ok:s=>Object.keys(s.br||{}).length>=3&&level()>=8,rew:[8000,500]},
+ {t:'La gran campaña',who:'Don Aurelio',txt:'«Una campaña publicitaria completa. Es lo que siempre soñé hacer y nunca me atreví. Hazla por los dos.»',goal:'Entrega 15 encargos en total',ok:s=>s.stats.jobs>=15,rew:[15000,900]},
+ {t:'Cine de verdad',who:'Don Aurelio',txt:'«Mira lo que hiciste con mi pequeño estudio. Ahora toca la película. Junta capital suficiente y rueda el primer largometraje de Claqueta.»',goal:'Gana $250,000 en total',ok:s=>s.earned>=250000,rew:[0,0]}
+];
+function storyObj(){if(S.story>=CH.length)return '';return 'Historia · '+(S.story+1)+'/'+CH.length+' «'+CH[S.story].t+'»: '+CH[S.story].goal+'.';}
+function storyModal(i,fin){
+  const c=CH[i],root=h('div',{style:'display:flex;flex-direction:column;gap:10px'},h('div',{style:'display:flex;gap:12px;align-items:center'},h('div',{style:'font-size:44px'},c.who==='Ricardo Vega'?'🕶️':'🎞️'),h('div',{},h('small',{style:'color:var(--amber);font:600 11px var(--mono);letter-spacing:.12em',text:fin?'CAPÍTULO CUMPLIDO':'CAPÍTULO '+(i+1)}),h('h2',{style:'margin:0',text:c.t}),h('small',{style:'color:var(--mut)',text:c.who}))),
+   h('p',{style:'font-size:15px;line-height:1.5',text:c.txt}),h('div',{class:'row'},h('div',{class:'tx'},h('b',{text:'Objetivo'}),h('small',{text:c.goal}))),
+   h('button',{class:'pri',onclick:()=>{closeModal();tryLock();}},'Entendido'));
+  openModal('story',root);
+}
+let storyT=0;
+function storyStep(){
+  if(!started||modal||P.loc||V.drive||paused)return;
+  if(S.story>=CH.length)return;
+  const c=CH[S.story];
+  if(S.storyI!==S.story){S.storyI=S.story;storyModal(S.story,false);return;}
+  if(c.ok(S)){const [cash,xp]=c.rew;if(cash)addCash(cash);if(xp)addXp(xp);S.story++;pop('Capítulo cumplido','#ffb347');
+    if(S.story>=CH.length){S.storyI=S.story;endingModal();}else toast('📖 «'+c.t+'» completado'+(cash?' · +'+$$(cash):'')+'. Revisa la pestaña Historia del teléfono.',5000);save();}
+}
+function endingModal(){openModal('story',h('div',{style:'display:flex;flex-direction:column;gap:10px'},h('h2',{text:'🎬 Fin de la historia'}),h('p',{style:'line-height:1.5',text:'Rafa Solano levantó la claqueta por última vez ese año. Detrás de la cámara, Don Aurelio sonreía. Vértigo Films pidió una reunión… para proponer una alianza. El estudio de la avenida se convirtió en una productora con diez sedes y un nombre propio. Pero el negocio sigue: aún quedan encargos, distritos y sucursales por automatizar.'}),h('button',{class:'pri',onclick:()=>{closeModal();tryLock();}},'Seguir jugando')));}
+function storyTab(B){
+  B.append(h('p',{style:'color:var(--mut);margin:0',text:'Tú eres '+HERO.n+', sobrino de '+HERO.tio+', heredero del Estudio Claqueta. Tu rival: '+HERO.rival+' de Vértigo Films.'}));
+  CH.forEach((c,i)=>{const done=i<S.story,cur=i===S.story;B.append(rowEl((done?'✅ ':cur?'▶ ':'🔒 ')+(i+1)+'. '+c.t,(done||cur)?c.goal+(cur?'':''):'Aún bloqueado',cur?h('button',{onclick:()=>{closeModal(true);storyModal(i,false);}},'Releer'):null,(done||cur)?h('small',{style:'color:var(--mut)',text:c.txt}):null));});
+  if(S.story>=CH.length)B.append(h('div',{class:'empty',text:'Historia completada. ¡Sigue expandiendo el imperio!'}));
+}
+/* ===== sucursales ===== */
+const BRSPOT={};
+DIST.forEach(d=>{
+  const [cx,cz]=d.c,bx=cx+10,bz=cz-10;
+  box(7,3.6,5,0xd7d0c4,bx,0,bz,{col:true});box(7.6,.35,5.6,0x555a66,bx,3.6,bz,{});
+  const cvs=document.createElement('canvas');cvs.width=512;cvs.height=160;const tex=new THREE.CanvasTexture(cvs);tex.encoding=THREE.sRGBEncoding;
+  const paint=()=>{const g=cvs.getContext('2d'),own=!!S.br[d.id];g.fillStyle=own?'#1d2330':'#7a1d1d';g.fillRect(0,0,512,160);g.fillStyle=own?'#ffb347':'#ffffff';g.font='bold 54px sans-serif';g.textAlign='center';g.fillText(own?'CLAQUETA STUDIO':'SE VENDE',256,76,480);g.font='30px sans-serif';g.fillStyle=own?'#ffd9a0':'#ffcccc';g.fillText(own?'Sucursal '+d.n:'Local disponible',256,128,480);tex.needsUpdate=true;};
+  const sign=plane(6.2,1.9,tex,bx,3.0,bz+2.55,0,true);paint();
+  const lamp=new THREE.PointLight(0xffb347,0,16);lamp.position.set(bx,4,bz+4);scene.add(lamp);
+  BRSPOT[d.id]={paint,lamp,x:bx,z:bz};
+  proxy(5,2.6,2,bx,0,bz+4.2,{label:()=>S.br[d.id]?'Sucursal '+d.n+' (administrar)':'Local en venta en '+d.n,fn:()=>branchModal(d.id)});
+});
+function branchPaint(){DIST.forEach(d=>{const b=BRSPOT[d.id];b.paint();b.lamp.intensity=S.br[d.id]?.9:0;});}
+function branchModal(id){
+  const d=DIST.find(q=>q.id===id),i=brKeys().indexOf(id),b=S.br[id];
+  const root=h('div',{style:'display:flex;flex-direction:column;gap:8px'},h('h2',{text:'Sucursal · '+d.n}));
+  if(!b){const c=brCost(),need=4;root.append(h('p',{text:'Local en venta. Una vez tuyo puedes contratar personal y automatizarlo para que genere ingresos cada día mientras haces encargos.'}),
+    rowEl('Comprar el local',$$(c)+' · requiere nivel '+need,h('button',{class:'pri',disabled:S.cash<c||level()<need,onclick:()=>{if(S.cash<c||level()<need)return;spend(c);S.br[id]={auto:0,day:S.day,earned:0};branchPaint();closeModal(true);pop('¡Nueva sucursal!','#5fd39a');beep(800,.12);save();}},level()<need?'Nivel '+need:'Comprar')));}
+  else root.append(...branchRows(id));
+  root.append(h('button',{onclick:()=>closeModal()},'Cerrar'));openModal('branch',root);
+}
+function branchRows(id){
+  const b=S.br[id],i=brKeys().indexOf(id),rate=brRate(id),rows=[];
+  rows.push(h('div',{class:'row'},h('div',{class:'tx'},h('b',{text:'Automatización: '+AUTO_N[b.auto]}),h('small',{text:'Rinde ≈ '+$$(Math.round(rate*AUTO_INC[b.auto]))+' al día · sueldos ≈ '+$$(Math.round(rate*AUTO_WAGE[b.auto]))+' · acumulado '+$$(Math.round(b.earned||0))}))));
+  if(b.auto<3){const c=brUp(i,b.auto+1);rows.push(rowEl('Subir a «'+AUTO_N[b.auto+1]+'»',$$(c)+' · rinde ≈ '+$$(Math.round(rate*AUTO_INC[b.auto+1]))+'/día',h('button',{class:'pri',disabled:S.cash<c,onclick:()=>{if(S.cash<c)return;spend(c);b.auto++;beep(700,.1);save();closeModal(true);branchModal(id);}},'Contratar')));}
+  else rows.push(h('div',{class:'empty',text:'Automatización máxima.'}));
+  return rows;
+}
+function branchDay(){
+  const out=[];let net=0;
+  brKeys().forEach(id=>{const b=S.br[id],rate=brRate(id),inc=Math.round(rate*AUTO_INC[b.auto]*rnd(.9,1.1)),w=Math.round(rate*AUTO_WAGE[b.auto]);addCash(inc);spend(w);b.earned=(b.earned||0)+inc-w;net+=inc-w;
+    out.push(DIST.find(q=>q.id===id).n+': +'+$$(inc)+' · sueldos −'+$$(w));});
+  return out;
+}
+function branchTab(B){
+  B.append(h('p',{style:'color:var(--mut);margin:0',text:'Compra locales «SE VENDE» junto a la plaza de cada distrito (E). Automatízalos para que rindan solos cada día. Hoy tienes '+brKeys().length+' sucursal(es). Próximo local: '+$$(brCost())+' (nivel 4).'}));
+  DIST.forEach(d=>{const b=S.br[d.id],dist=Math.round(Math.hypot(d.c[0]-P.x,d.c[1]-P.z));
+    if(b)B.append(rowEl('🏢 '+d.n,AUTO_N[b.auto]+' · acumulado '+$$(Math.round(b.earned||0)),h('button',{onclick:()=>{closeModal(true);branchModal(d.id);}},'Administrar')));
+    else B.append(rowEl('📍 '+d.n,'Local en venta · '+dist+' m de ti',h('span',{class:'pill',text:'Disponible'})));});
+}
+/* ===== mapa ===== */
+function mapTab(B){
+  const W=520,Hh=380,sx=W/1060,sz=Hh/780,cvs=h('canvas',{width:W,height:Hh,style:'width:100%;border-radius:8px;background:#7ba66a'}),g=cvs.getContext('2d');
+  const X=x=>(x+340)*sx,Z=z=>(z+340)*sz;
+  g.fillStyle='#7ba66a';g.fillRect(0,0,W,Hh);g.fillStyle='#3b88b8';g.beginPath();g.rect(X(330),Z(96),W-X(330),Hh-Z(96));g.fill();
+  g.fillStyle='#98c27e';PADS.forEach(p=>{g.beginPath();if(p.seg){g.rect(X(p.seg[0]-p.r),Z(p.seg[1]-p.r),(p.seg[2]-p.seg[0]+2*p.r)*sx,2*p.r*sz);}else g.ellipse(X(p.c[0]),Z(p.c[1]),p.r*sx,p.r*sz,0,0,7);g.fill();});
+  g.strokeStyle='#44474e';g.lineWidth=3;ROADS.forEach(R=>{g.beginPath();R.pts.forEach((p,i)=>i?g.lineTo(X(p.x),Z(p.z)):g.moveTo(X(p.x),Z(p.z)));g.stroke();});
+  g.lineWidth=5;g.beginPath();g.moveTo(X(-50),Z(17.6));g.lineTo(X(255),Z(17.6));g.stroke();
+  g.font='bold 10px sans-serif';g.textAlign='center';
+  DIST.forEach(d=>{g.fillStyle=S.br[d.id]?'#ffb347':'#14181f';g.beginPath();g.arc(X(d.c[0]),Z(d.c[1]),4,0,7);g.fill();g.fillStyle='#10131a';g.fillText(d.n,X(d.c[0]),Z(d.c[1])-8);});
+  g.fillStyle='#10131a';g.fillText('Centro',X(70),Z(17)-8);g.fillText('Playa Dorada',X(430),Z(53)-8);
+  S.jobs.filter(j=>j.stage==='shoot').forEach(j=>{const l=LOCBY[j.loc];g.fillStyle='#ff3b30';g.beginPath();g.arc(X(l.mk[0]),Z(l.mk[1]),4.5,0,7);g.fill();});
+  g.fillStyle='#fff';g.strokeStyle='#000';g.lineWidth=1.5;g.beginPath();g.arc(X(V.drive?V.x:P.x),Z(V.drive?V.z:P.z),4,0,7);g.fill();g.stroke();
+  B.append(cvs,h('small',{style:'color:var(--mut)',text:'Punto blanco = tú · rojo = rodajes pendientes · naranja = sucursal tuya'}));
+  B.append(rowEl('Tu estudio','Edita aquí tus videos y atiende clientes.',h('button',{onclick:()=>{S.trk='studio';phoneRender();}},S.trk==='studio'?'Marcado ✔':'Marcar')));
+  const zn={centro:'Centro',sanrafael:'Mercado San Rafael',alba:'Edificio Alba',playa:'Playa Dorada'};DIST.forEach(d=>zn[d.id]=d.n);
+  Object.keys(zn).forEach(z=>{const ls=LOCS.filter(l=>l.dist===z);if(!ls.length)return;B.append(h('h3',{text:zn[z]}));
+    ls.forEach(l=>{const jn=S.jobs.filter(j=>j.stage==='shoot'&&j.loc===l.id).length;B.append(rowEl(l.n,(jn?jn+' rodaje(s) tuyo(s) aquí · ':'')+Math.round(Math.hypot(l.mk[0]-P.x,l.mk[1]-P.z))+' m de ti',h('button',{onclick:()=>{S.trk=l.id;phoneRender();}},S.trk===l.id?'Marcado ✔':'Marcar')));});});
+}
+branchPaint();
 /* ================= Teléfono ================= */
 let phoneTab='res',phoneBody=null,phoneTabs=null;
-const PT=[['res','Resumen'],['enc','Encargos'],['map','Mapa'],['tie','Tienda'],['per','Personal'],['ads','Anuncios'],['mas','Más']];
+const PT=[['res','Resumen'],['enc','Encargos'],['map','Mapa'],['tie','Tienda'],['per','Personal'],['ads','Anuncios'],['his','Historia'],['suc','Sucursales'],['mas','Más']];
 function rowEl(title,sub,btn,extra){return h('div',{class:'row'},h('div',{class:'tx'},h('b',{},title),sub?h('small',{text:sub}):null,extra||null),btn);}
 function openPhone(){
   phoneBody=h('div',{style:'display:flex;flex-direction:column;gap:8px;min-height:360px;max-height:58vh;overflow:auto;padding-top:6px'});
@@ -1495,11 +1960,9 @@ function phoneRender(){
     B.append(h('p',{style:'color:var(--mut);margin:0',text:'La tienda Cine-Equipo está pegada al estudio (a la derecha, entra por su propia puerta). Ahí compras de verdad: párate frente a un producto y presiona E. Lo que compres aparece en tu inventario (I).'}));
     for(const [k,n,max,base,m,d,names] of GEAR){const lv=G_(k);B.append(rowEl(n+'  nv '+lv+'/'+max,names[lv]+(lv<max?' → siguiente: '+names[lv+1]+' ('+$$(costOf(base,m,lv))+', nivel '+(1+lv*2)+')':' (máximo)')+' — '+d));}
   }
-  if(phoneTab==='map'){
-    B.append(h('p',{style:'color:var(--mut);margin:0',text:'Marca un destino para que la brújula (arriba al centro) y el rayo naranja te guíen. En la furgoneta tienes viaje rápido.'}));
-    B.append(rowEl('Tu estudio','Edita aquí tus videos y atiende clientes.',h('button',{onclick:()=>{S.trk='studio';phoneRender();}},S.trk==='studio'?'Marcado ✔':'Marcar')));
-    for(const l of LOCS){const jn=S.jobs.filter(j=>j.stage==='shoot'&&j.loc===l.id).length;B.append(rowEl(l.n,(jn?jn+' rodaje(s) tuyo(s) aquí · ':'')+Math.round(Math.hypot(l.mk[0]-P.x,l.mk[1]-P.z))+' m de ti'+(l.far?' · muy lejos':''),h('button',{onclick:()=>{S.trk=l.id;phoneRender();}},S.trk===l.id?'Marcado ✔':'Marcar')));}
-  }
+  if(phoneTab==='map')mapTab(B);
+  if(phoneTab==='his')storyTab(B);
+  if(phoneTab==='suc')branchTab(B);
   if(phoneTab==='per'){
     B.append(h('p',{style:'color:var(--mut);margin:0',text:'Los sueldos se pagan al terminar cada día.'}));
     for(const [k,n,max,d,base,m,w] of STAFF){const l=ST(k),c=costOf(base,m,l),rq=1+l*2;
@@ -1524,9 +1987,10 @@ function phoneRender(){
 
 /* ================= Día, luz y encabezado ================= */
 const COL_DAY=new THREE.Color(0x9fc5e8),COL_DUSK=new THREE.Color(0xf0a070),COL_NIGHT=new THREE.Color(0x0e1530),tmpC=new THREE.Color();
-function applyTime(){
+const SF={x:0,z:0};
+function applyTime(){const ux=Math.round(((V.drive?V.x:P.x)-10)/10)*10,uz=Math.round(((V.drive?V.z:P.z)-10)/10)*10;SF.x=ux;SF.z=uz;
   const t=clamp((S.min-DAY_START)/(DAY_END-DAY_START),0,1),el=.4+.6*Math.sin(t*Math.PI);
-  sun.intensity=.1+.95*el;sun.position.set(26-60*t,12+30*el,-10+4*t);hemi.intensity=.28+.42*el;
+  sun.intensity=.1+.95*el;sun.target.position.set(10+SF.x,0,10+SF.z);sun.position.set(26-60*t+SF.x,12+30*el,-10+4*t+SF.z);hemi.intensity=.28+.42*el;
   roomLights.forEach(l=>l.intensity=.45+(1-el)*.55);
   if(P.loc)return;
   tmpC.copy(COL_DAY).lerp(COL_DUSK,clamp((t-.72)/.28,0,1));
@@ -1538,9 +2002,10 @@ function hud(){
   $('#lvtx').textContent='Nivel '+l+' · '+Math.floor(S.xp)+' XP';$('#xpbar').style.width=clamp((S.xp-a)/(b-a),0,1)*100+'%';
   $('#daytx').textContent='Día '+S.day+' · '+hhmm(S.min);$('#daybar').style.width=clamp((S.min-DAY_START)/(DAY_END-DAY_START),0,1)*100+'%';
   $('#opentx').textContent=P.loc?'De rodaje':(S.open?'Estudio abierto':'Estudio cerrado');$('#opentx').style.color=S.open?'var(--green)':'var(--mut)';
-  $('#objtx').textContent=objective();
+  $('#objtx').textContent=objective();storyT+=1;if(storyT>=2){storyT=0;storyStep();}
 }
-function objective(){
+function objective(){const so=storyObj();const o0=objective0();return so?so+(o0?'\n▸ '+o0:''):o0;}
+function objective0(){
   if(V.drive)return 'Conduce hasta el punto naranja (mira la brújula arriba). E para bajar.';
   if(P.loc&&RS){const t=RS.list[RS.i],sb=tomaSub();return 'Toma '+(RS.i+1)+'/'+RS.list.length+': '+TT[t.tt].n+' de «'+sb[0]+'». Ve al anillo naranja, apunta (clic der.) y graba (clic izq.).';}
   const pay=customers.find(c=>c.state==='pay');if(pay)return 'Cobra a '+pay.name+' en el mostrador (E).';
@@ -1561,8 +2026,10 @@ function endDay(){
   if(due>0)spend(due);
   if(V.drive)exitVan();customers.forEach(c=>{scene.remove(c.g);const k=interactables.indexOf(c.g);if(k>=0)interactables.splice(k,1);});customers.length=0;pedestal.visible=false;prodBox.visible=false;
   S.open=false;paintSign();S.edits=S.edits.filter(o=>o.kind==='job');
+  const brl=branchDay();
   const sum=h('div',{style:'display:flex;flex-direction:column;gap:8px'},h('h2',{text:'Fin del día '+S.day}),
     h('div',{class:'row'},h('div',{class:'tx'},h('b',{text:'Ingresos '+$$(S.today.in)+' · Gastos '+$$(S.today.out)}),h('small',{text:'Clientes atendidos: '+S.today.n+' · Caja: '+$$(S.cash)}),note?h('small',{class:'bad',text:note}):null)),
+    brl.length?h('div',{class:'row'},h('div',{class:'tx'},h('b',{text:'Sucursales'}),...brl.map(t=>h('small',{text:t})))):null,
     S.jobs.some(j=>S.day+1>j.deadline)?h('p',{class:'bad',text:'Atención: tienes proyectos con la fecha de entrega vencida (se pagan a la mitad).'}):null,
     h('button',{class:'pri',onclick:()=>{closeModal(true);newDay();tryLock();}},'Dormir y empezar el día '+(S.day+1)));
   openModal('day',sum);save();
@@ -1603,9 +2070,9 @@ function frame(now){
   }
   /* cámara */
   const moving=started&&!modal&&(keys.has('KeyW')||keys.has('KeyA')||keys.has('KeyS')||keys.has('KeyD'));bob+=moving?dt*8:0;
-  const held=heldItem();let cx=P.x,cy=1.65+P.y+MV.jy+(moving&&!V.drive&&!MV.air?Math.sin(bob)*.025:0),cz=P.z;
-  if(V.drive){cx=V.x+Math.sin(V.h)*.5+Math.cos(V.h)*.45;cz=V.z+Math.cos(V.h)*.5-Math.sin(V.h)*.45;cy=2.05;}else if(held==='dron'&&P.aim)cy+=9;
-  camera.position.set(cx,cy,cz);look();drunkFx(performance.now());
+  const held=heldItem();if(P.y===0)TY.p+=(getH(P.x,P.z)-TY.p)*Math.min(1,dt*12);else TY.p=0;let cx=P.x,cy=1.65+P.y+TY.p+MV.jy+(moving&&!V.drive&&!MV.air?Math.sin(bob)*.025:0),cz=P.z;
+  if(V.drive){cx=V.x+Math.sin(V.h)*.5+Math.cos(V.h)*.45;cz=V.z+Math.cos(V.h)*.5-Math.sin(V.h)*.45;cy=2.05+(V.y||0);}else if(held==='dron'&&P.aim)cy+=9;
+  camera.position.set(cx,cy,cz);look();drunkFx(performance.now());if(window.__dbgcam){const c=window.__dbgcam;camera.position.set(c[0],c[1],c[2]);camera.lookAt(c[3],c[4],c[5]);}
   const tf=P.aim?(isGun(held)?58:Math.max(26,44-4*G_('lentes'))):FOV0;if(Math.abs(camera.fov-tf)>.1){camera.fov+=(tf-camera.fov)*Math.min(1,dt*11);camera.updateProjectionMatrix();}
   hand.visible=(!P.aim||isGun(held))&&!V.drive;for(const k in handItems)handItems[k].visible=(k===held)&&!BB.held;
   $('#vf').style.display=P.aim&&started&&!modal&&!V.drive&&!isGun(held)?'block':'none';
@@ -1620,7 +2087,7 @@ function frame(now){
 
 /* ================= Inicio ================= */
 function boot(){
-  initCull();const had=load();S.boxes.forEach(b=>{S.gear[b.key]=Math.max(S.gear[b.key],b.lvl+1);});S.boxes=[];
+  initCull();const had=load();if(!S.br)S.br={};branchPaint();S.boxes.forEach(b=>{S.gear[b.key]=Math.max(S.gear[b.key],b.lvl+1);});S.boxes=[];
   S.leads=S.leads.filter(l=>l.list&&l.loc);S.jobs.forEach(j=>{if(j.stage==='shoot'&&!j.list){const jt=JOBS.find(x=>x.id===j.type)||JOBS[0];j.loc=pick(jt.locs);j.list=makePlan(jt,j.loc);}});if(!S.hot.includes('cam'))S.hot[0]='cam';syncVan();refreshShop();S.edits=(S.edits||[]).filter(o=>o.kind==='job').map(o=>Object.assign(o,{busy:false,done:false}));
   syncWorld();syncBoxes();paintSign();applyTime();
   if(!S.leads.length)genLeads(2);
@@ -1628,7 +2095,7 @@ function boot(){
   if('ontouchstart' in window&&!window.matchMedia('(pointer:fine)').matches)$('#note').textContent='Este juego necesita teclado y mouse: ábrelo desde una computadora.';
   $('#playBtn').onclick=()=>{started=true;$('#start').remove();AC&&AC.resume&&AC.resume();tryLock();if(had)toast('Partida cargada · '+$$(S.cash)+' · día '+S.day);};
   addEventListener('beforeunload',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save();});
-  window.__G={openDrinks,passOut,sleepHome,openSnake,tierLook,stepDrunk,drunkFx,stepBall,BB,throwBall,takeBall,HOOPS,startMatch,ballMesh,PED,fireGun,hurtPed,hurtPlayer,openArms,GUN,FR_ALL,MV,CULL,renderer,stepPeds,openBJ,openPoker,openSlots,openRoulette,talk,NPCS,evalHand,cmpHand,S:()=>S,P,V,keys,blocked,colliders,customers,stands,get RS(){return RS;},LOCBY,TT,spawnCustomer,greet,collect,custAct,openPhone,phoneRender,startShoot,endShoot,endDay,newDay,addShot,finishEdit,editAct,acceptLead,genLeads,syncWorld,hud,setStarted:v=>{started=v;},toggleOpen,tryLock,buyGear,openInv,selectSlot,heldItem,shotInfo,startDrive,exitVan,driveStep,fastTravel,goRoof,needsOf,makePlan,dest,vanAct_,step:(dt)=>{stepCustomers(dt);stepStaff(dt);stepShoot(dt);},setPhoneTab:t=>{phoneTab=t;phoneRender();},get modal(){return modal;},look,shotQuality,doInteract,scanTarget,place:(x,z,yaw,pitch,y)=>{P.x=x;P.z=z;P.yaw=yaw;P.pitch=pitch;P.y=y||0;camera.position.set(x,1.65+P.y,z);look();camera.updateMatrixWorld(true);scanTarget();},frameDt:(dt)=>{S.min+=dt*MIN_PER_SEC;}};
+  window.__G={MISSIONS,genLeads,branchModal,branchDay,storyStep,CH,openTravel,getH,ROADS,PLACES,DIST,mapTab,brCost,level,startShoot,openDrinks,passOut,sleepHome,openSnake,tierLook,stepDrunk,drunkFx,stepBall,BB,throwBall,takeBall,HOOPS,startMatch,ballMesh,PED,fireGun,hurtPed,hurtPlayer,openArms,GUN,FR_ALL,MV,CULL,renderer,stepPeds,openBJ,openPoker,openSlots,openRoulette,talk,NPCS,evalHand,cmpHand,S:()=>S,P,V,keys,blocked,colliders,customers,stands,get RS(){return RS;},LOCBY,TT,spawnCustomer,greet,collect,custAct,openPhone,phoneRender,startShoot,endShoot,endDay,newDay,addShot,finishEdit,editAct,acceptLead,genLeads,syncWorld,hud,setStarted:v=>{started=v;},toggleOpen,tryLock,buyGear,openInv,selectSlot,heldItem,shotInfo,startDrive,exitVan,driveStep,fastTravel,goRoof,needsOf,makePlan,dest,vanAct_,step:(dt)=>{stepCustomers(dt);stepStaff(dt);stepShoot(dt);},setPhoneTab:t=>{phoneTab=t;phoneRender();},get modal(){return modal;},look,shotQuality,doInteract,scanTarget,place:(x,z,yaw,pitch,y)=>{P.x=x;P.z=z;P.yaw=yaw;P.pitch=pitch;P.y=y||0;camera.position.set(x,1.65+P.y,z);look();camera.updateMatrixWorld(true);scanTarget();},frameDt:(dt)=>{S.min+=dt*MIN_PER_SEC;}};
   requestAnimationFrame(t=>{last=t;frame(t);});
 }
 boot();
