@@ -553,11 +553,12 @@ const keys=new Set();
 let started=false,paused=false,modal=null;
 function look(){camera.rotation.set(P.pitch,P.yaw,0,'YXZ');}
 let noLock=!(cv.requestPointerLock),drag=null;
-function lockFail(){if(noLock)return;noLock=true;toast('Tu navegador no dejó capturar el mouse (suele pasar en vistas previas). Mira con clic izquierdo + arrastrar. Para la mejor experiencia abre el juego en una pestaña propia.',7000);}
+let lockFails=0,lastTry=0;
+function lockFail(){if(noLock)return;lockFails++;if(lockFails>=4){noLock=true;toast('Tu navegador no deja capturar el mouse aquí. Gira con el cursor en los bordes, las flechas, o clic + arrastrar.',6000);}}
 function tryLock(){if(!started||modal||noLock)return;try{const p=cv.requestPointerLock&&cv.requestPointerLock();if(p&&p.catch)p.catch(lockFail);}catch(e){lockFail();}}
 document.addEventListener('pointerlockerror',lockFail);
 let skipMv=0,lastMv=0;
-document.addEventListener('pointerlockchange',()=>{P.locked=document.pointerLockElement===cv;skipMv=4;if(!P.locked&&started&&!modal&&!pauseOv)showPause();});
+document.addEventListener('pointerlockchange',()=>{P.locked=document.pointerLockElement===cv;if(P.locked){lockFails=0;noLock=false;}skipMv=4;if(!P.locked&&started&&!modal&&!pauseOv)showPause();});
 document.addEventListener('mousemove',e=>{if(modal||paused||!started)return;if(!P.locked&&!(noLock&&drag))return;
   /* filtro anti-saltos: Chrome a veces manda un movimiento enorme al capturar el mouse o al llegar al borde de la pantalla */
   const now=performance.now();if(skipMv>0){skipMv--;lastMv=now;return;}
