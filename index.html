@@ -3754,7 +3754,7 @@ function askAssign(job){openDelegate(job);}
 acceptLead=function(l){const n0=S.jobs.length;_acceptLead0(l);
   if(S.jobs.length>n0){const j=S.jobs[S.jobs.length-1];if(S.hired.length)setTimeout(()=>{if(!modal||modal.kind==='phone')openDelegate(j);},200);else toast('Tip: contrata personal (teléfono → Personal) para delegar grabación o edición.',4500);}};
 /* ---- los de campo trabajan solos ---- */
-function stepStaff(){
+function stepFieldStaff(){
   const now=AM();
   S.jobs.forEach(j=>{if(j.stage!=='deleg')return;const a=S.shAsg[j.id];if(!a)return;const e=edBy(a.id);if(!e){j.stage='shoot';return;}
     if(!a.sT){if(S.jobs.some(o=>o!==j&&o.stage==='deleg'&&S.shAsg[o.id]&&S.shAsg[o.id].id===a.id&&S.shAsg[o.id].sT))return;a.sT=now+ri(840,1200);return;}
@@ -3765,7 +3765,7 @@ function stepStaff(){
       addMsg(e.name,'🎥 Terminé de grabar «'+j.n+'» ('+Math.round(j.q*100)+'% de calidad). Tarifa: '+$$(fee)+'. '+(o.edBy?'Ya se lo pasé a '+edBy(o.edBy).name+' para editar.':'Está listo para que lo edites en las salas de edición.'),0);
       toast('🎥 '+e.name+' terminó de grabar «'+j.n+'»',4500);syncEditors();}});
 }
-{const _sc=stepClock;stepClock=function(dt){_sc(dt);stepStaff();};}
+{const _sc=stepClock;stepClock=function(dt){_sc(dt);stepFieldStaff();};}
 /* edición asignada: ~1 día */
 {const _se=stepEditors;stepEditors=function(){S.edits.forEach(o=>{if(o.kind==='job'&&o.edBy&&!o.edT&&!o.done){const e=edBy(o.edBy);if(e&&!edBusy2(o,o.edBy)){o.edT=AM()+ri(720,1080);o.busy=true;}}});_se();};}
 function editPC(kind){
