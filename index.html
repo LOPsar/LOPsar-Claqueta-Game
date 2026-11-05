@@ -3850,11 +3850,11 @@ function buildPerson(ap,inScene){
   const B=(w,hh,d,c,x,y,z,pr)=>box(w,hh,d,c,x,y,z,{parent:pr||g,cast:false});
   /* torso por tipo de prenda */
   const hood=ap.top===2,jac=ap.top===3,strap=ap.top===4,long=ap.top===1||hood||jac;
-  B(hood?.5:.44,.6,hood?.3:.25,sc,0,.46,0);
-  if(jac){B(.12,.6,.27,0x14181f,0,.46,0);B(.46,.08,.27,0x14181f,0,.98,0);}
-  if(ap.top===1){B(.12,.07,.27,0xffffff,0,.96,.02);}
+  B(hood?.5:.44,.6,hood?.3:.25,sc,0,.76,0);
+  if(jac){B(.12,.6,.27,0x14181f,0,.76,0);B(.46,.08,.27,0x14181f,0,1.28,0);}
+  if(ap.top===1){B(.12,.07,.27,0xffffff,0,1.26,.02);}
   if(hood){const h2=ball(.17,sc,0,1.34,-.12,{parent:g});h2.scale.set(1.1,.7,.7);}
-  if(strap){B(.44,.2,.26,skin,0,.86,0);B(.06,.14,.27,sc,-.14,.86,0);B(.06,.14,.27,sc,.14,.86,0);}
+  if(strap){B(.44,.2,.26,skin,0,1.16,0);B(.06,.14,.27,sc,-.14,1.16,0);B(.06,.14,.27,sc,.14,1.16,0);}
   /* cabeza */
   const head=ball(.14,skin,0,1.55,0,{parent:g});head.scale.set(1,1.08,1);
   B(.05,.07,.05,skin,0,1.37,0);
@@ -3888,12 +3888,12 @@ function buildPerson(ap,inScene){
   const mk=(x,y,w,hh,c,c2,cut)=>{const p=new THREE.Group();p.position.set(x,y,0);g.add(p);
     if(cut){const top=hh*cut;B(w,top,w+.04,c,0,-top,0,p);B(w,hh-top,w+.04,c2,0,-hh,0,p);return p;}
     B(w,hh,w+.04,c,0,-hh,0,p);return p;};
-  const armTop=ap.top===4?(long?sc:skin):(ap.top===0?skin:sc);
+  const armTop=ap.top===4?skin:sc;
   const shortLeg=ap.bottom===1,pcol=ap.bottom===2?0x3a5a8a:pc;
   g.userData={legL:mk(-.11,.76,.17,.72,pcol,skin,shortLeg?.5:0),legR:mk(.11,.76,.17,.72,pcol,skin,shortLeg?.5:0),
-    armL:mk(-.3,1.34,.12,.55,armTop,skin,ap.top===0||ap.top===4?0:.6),armR:mk(.3,1.34,.12,.55,armTop,skin,ap.top===0||ap.top===4?0:.6),t:Math.random()*9};
-  if(ap.top===0||ap.top===4){g.userData.armL.children[0].material=M(skin);g.userData.armR.children[0].material=M(skin);}
-  [-1,1].forEach(s=>B(.18,.07,.24,0x15171b,s*.11,0,.03,s<0?g.userData.legL:g.userData.legR));
+    armL:mk(-.3,1.34,.12,.55,armTop,skin,ap.top===4?0:(ap.top===0?.38:.6)),armR:mk(.3,1.34,.12,.55,armTop,skin,ap.top===4?0:(ap.top===0?.38:.6)),t:Math.random()*9};
+  if(ap.top===4){g.userData.armL.children[0].material=M(skin);g.userData.armR.children[0].material=M(skin);}
+  [-1,1].forEach(s=>B(.18,.07,.24,0x15171b,0,-.72,.03,s<0?g.userData.legL:g.userData.legR));
   g.userData.legL.children.forEach(()=>{});
   g.scale.setScalar([.92,1,1.1][ap.height]);
   const spr=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false}));spr.scale.set(1.5,.42,1);spr.position.y=2.05;spr.renderOrder=10;spr.visible=false;g.add(spr);g.userData.bubble=spr;
